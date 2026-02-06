@@ -9,17 +9,17 @@
   "theme_color": "#f5f5f7",
   "icons": [
     {
-      "src": "math_icon_180.png",
+      "src": "icons/math_icon_180.png",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "math_icon_192.png",
+      "src": "icons/math_icon_192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "math_icon_512.png",
+      "src": "icons/math_icon_512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Aviation Calculator</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <!-- PWA -->
 <link rel="manifest" href="./manifest.json">
@@ -24,19 +25,61 @@
 <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0c0c0f" media="(prefers-color-scheme: dark)">
 
+<script>
+  (function(){
+    try {
+      const saved = localStorage.getItem('aviationTheme');
+      const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = (saved === 'dark' || saved === 'light') ? saved : (systemDark ? 'dark' : 'light');
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+    } catch (_) {}
+  })();
+</script>
+
 <style>
   /* ===== Theme tokens ===== */
   :root{
-    --bg:#f5f5f7; --card:#ffffff; --text:#1c1c1e; --muted:#8e8e93; --accent:#007aff; --ring:rgba(0,122,255,.18);
-    --surface:rgba(255,255,255,.7);
+    --bg:#f5f5f7; --card:#ffffff; --card-2:#e5e5ea; --text:#1c1c1e; --muted:#6e6e73; --accent:#007aff; --ring:rgba(0,122,255,.18);
+    --surface:rgba(255,255,255,.74); --surface-strong:#ffffff; --field-bg:linear-gradient(180deg, rgba(0,0,0,.025), rgba(0,0,0,0));
+    --field-border:rgba(0,0,0,.08); --border:rgba(0,0,0,.08); --divider:rgba(0,0,0,.07);
+    --box-bg:linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.62));
+    --soft-bg:#f0f2f5; --control-bg:#ffffff; --control-border:rgba(0,0,0,.12);
+    --secondary-bg:#e5e5ea; --secondary-text:#111111; --shadow:0 12px 28px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05);
+    --switch-bg:rgba(0,0,0,.05); --switch-border:rgba(0,0,0,.08);
     --dur-fast:180ms; --dur-med:220ms; --ease:cubic-bezier(.22,.61,.36,1);
     --danger: #e5484d;  /* red */
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#0c0c0f; --card:#1c1c20; --text:#f2f2f7; --muted:#8e8e93; --ring:rgba(10,132,255,.15);
-      --surface:rgba(28,28,32,.9);
+      --bg:#0c0c0f; --card:#1c1c20; --card-2:#2a2a2f; --text:#f2f2f7; --muted:#aeaeb2; --accent:#0a84ff; --ring:rgba(10,132,255,.18);
+      --surface:rgba(28,28,32,.9); --surface-strong:#232327; --field-bg:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+      --field-border:rgba(255,255,255,.11); --border:rgba(255,255,255,.10); --divider:rgba(255,255,255,.09);
+      --box-bg:linear-gradient(180deg, rgba(36,36,41,.96), rgba(30,30,35,.86));
+      --soft-bg:#2c2c2e; --control-bg:#1f1f23; --control-border:rgba(255,255,255,.12);
+      --secondary-bg:#2a2a2f; --secondary-text:#f2f2f7; --shadow:0 12px 28px rgba(0,0,0,.36), 0 2px 8px rgba(0,0,0,.30);
+      --switch-bg:rgba(255,255,255,.06); --switch-border:rgba(255,255,255,.10);
     }
+  }
+  html[data-theme="light"]{
+    color-scheme:light;
+    --bg:#f5f5f7; --card:#ffffff; --card-2:#e5e5ea; --text:#1c1c1e; --muted:#6e6e73; --accent:#007aff; --ring:rgba(0,122,255,.18);
+    --surface:rgba(255,255,255,.74); --surface-strong:#ffffff; --field-bg:linear-gradient(180deg, rgba(0,0,0,.025), rgba(0,0,0,0));
+    --field-border:rgba(0,0,0,.08); --border:rgba(0,0,0,.08); --divider:rgba(0,0,0,.07);
+    --box-bg:linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.62));
+    --soft-bg:#f0f2f5; --control-bg:#ffffff; --control-border:rgba(0,0,0,.12);
+    --secondary-bg:#e5e5ea; --secondary-text:#111111; --shadow:0 12px 28px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05);
+    --switch-bg:rgba(0,0,0,.05); --switch-border:rgba(0,0,0,.08);
+  }
+  html[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#0c0c0f; --card:#1c1c20; --card-2:#2a2a2f; --text:#f2f2f7; --muted:#aeaeb2; --accent:#0a84ff; --ring:rgba(10,132,255,.18);
+    --surface:rgba(28,28,32,.9); --surface-strong:#232327; --field-bg:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+    --field-border:rgba(255,255,255,.11); --border:rgba(255,255,255,.10); --divider:rgba(255,255,255,.09);
+    --box-bg:linear-gradient(180deg, rgba(36,36,41,.96), rgba(30,30,35,.86));
+    --soft-bg:#2c2c2e; --control-bg:#1f1f23; --control-border:rgba(255,255,255,.12);
+    --secondary-bg:#2a2a2f; --secondary-text:#f2f2f7; --shadow:0 12px 28px rgba(0,0,0,.36), 0 2px 8px rgba(0,0,0,.30);
+    --switch-bg:rgba(255,255,255,.06); --switch-border:rgba(255,255,255,.10);
   }
 
   /* ===== Resets / layout ===== */
@@ -50,7 +93,81 @@
   }
   .app{ max-width:1180px; margin:0 auto; padding:16px}
   h1{ font-size:22px; font-weight:700; letter-spacing:.2px; margin:0 0 8px }
-  .subtitle{ color:var(--muted); margin-bottom:18px; font-size:14px }
+  .app-header{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+    margin-bottom:18px;
+  }
+  .app-title{ min-width:0; flex:1 }
+  .subtitle{ color:var(--muted); margin:0; font-size:14px }
+  .header-actions{ display:flex; align-items:flex-start; justify-content:flex-end; gap:10px; flex-wrap:wrap }
+  .home-mode-switch{
+    display:inline-flex; align-items:center; gap:2px; flex:0 0 auto;
+    padding:3px; border-radius:13px; border:1px solid var(--switch-border);
+    background:var(--switch-bg);
+  }
+  .home-mode-switch button{
+    border:0; background:transparent; color:var(--muted); cursor:pointer;
+    min-width:76px; padding:7px 10px; border-radius:10px;
+    font:600 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+    transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  }
+  .home-mode-switch button.active{
+    background:var(--card); color:var(--text);
+    box-shadow:0 1px 4px rgba(0,0,0,.12);
+  }
+  .home-mode-switch button:focus-visible{ outline:none; box-shadow:0 0 0 4px var(--ring) }
+  .theme-toggle{
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    min-height:34px; padding:7px 11px; border-radius:13px;
+    border:1px solid var(--switch-border); background:var(--switch-bg); color:var(--text);
+    font:600 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+    cursor:pointer; transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  }
+  .theme-toggle i{ color:var(--accent); width:14px; text-align:center }
+  .theme-toggle:focus-visible{ outline:none; box-shadow:0 0 0 4px var(--ring) }
+  .theme-toggle:hover{ background:var(--card) }
+  @media (max-width:760px){
+    .header-actions{ align-self:stretch }
+  }
+  @media (max-width:560px){
+    .app-header{ flex-direction:column; gap:10px }
+    .header-actions{ align-self:stretch; justify-content:space-between }
+    .home-mode-switch{ flex:1 1 auto }
+    .home-mode-switch button{ flex:1 1 0 }
+  }
+  .airport-context{
+    background:var(--card); border-radius:18px; padding:12px; margin:0 0 16px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--border);
+  }
+  .airport-context .toolbar{ margin:0; gap:10px }
+  .airport-context .field{
+    flex:1 1 150px; min-width:130px; padding:8px 10px; border-radius:12px;
+  }
+  .airport-context .field.airport-code{ flex:0 1 150px }
+  .airport-context .field.runway-select{ flex:1 1 240px }
+  .airport-context input,
+  .airport-context select{ min-height:30px }
+  .airport-context .btn{ white-space:nowrap }
+  .airport-context-status{
+    display:grid; grid-template-columns:1.2fr .8fr; gap:10px; margin-top:10px;
+    color:var(--muted); font-size:13px;
+  }
+  .airport-context-status strong{ color:var(--text); font-weight:600 }
+  .wx-summary,.wx-age{ min-width:0 }
+  .wx-summary{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .wx-age{ text-align:right; transition:color var(--dur-fast) var(--ease) }
+  .wx-age-value{ font-weight:700; color:var(--wx-age-color, var(--text)); transition:color var(--dur-fast) var(--ease) }
+  @media (max-width:720px){
+    .airport-context .toolbar{ align-items:stretch }
+    .airport-context .field,
+    .airport-context .field.airport-code,
+    .airport-context .field.runway-select{ flex:1 1 100%; min-width:0 }
+    .airport-context .btn{ flex:1 1 auto }
+    .airport-context-status{ grid-template-columns:1fr }
+    .wx-summary{ white-space:normal }
+    .wx-age{ text-align:left }
+  }
   .hidden{ display:none }
 
   /* ===== Tiles ===== */
@@ -60,14 +177,15 @@
   }
   .tile,.panel{
     background:var(--card); border-radius:18px;
-    box-shadow:0 12px 28px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05);
-    border:1px solid rgba(0,0,0,.04);
+    box-shadow:var(--shadow);
+    border:1px solid var(--border);
   }
   .tile{
     padding:16px; cursor:pointer;
     transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
     will-change:transform;
   }
+  .tile.mode-hidden{ display:none }
   .tile:hover{ transform:translateY(-2px) }
   .tile:active{ transform:translateY(0) scale(.995) }
   .tile h3{ margin:0 0 6px; font-size:16px }
@@ -89,8 +207,7 @@
     will-change:transform;
   }
   .btn:active{ transform:translateY(1px) }
-  .btn.secondary{ background:#e5e5ea; color:#111 }
-  @media (prefers-color-scheme: dark){ .btn.secondary{ background:#2a2a2f; color:#fff } }
+  .btn.secondary{ background:var(--secondary-bg); color:var(--secondary-text) }
   .btn.ghost{ background:transparent; color:var(--accent); padding:8px 10px }
   .btn.linky{ background:transparent; color:var(--accent); padding:6px 8px; font-size:13px }
 
@@ -100,38 +217,36 @@
   }
   .field{
     display:flex; flex-direction:column; gap:6px;
-    background:linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
-    padding:10px; border-radius:14px; border:1px solid rgba(0,0,0,.06);
+    background:var(--field-bg);
+    padding:10px; border-radius:14px; border:1px solid var(--field-border);
   }
-  @media (prefers-color-scheme: dark){ .field{ border-color:rgba(255,255,255,.06) } }
 
   label{ font-size:12px; color:var(--muted) }
   input, select{
     border:0; background:transparent; outline:none; font-size:16px; padding:4px 2px; color:var(--text); border-radius:10px;
     transition:box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
   }
+  input::placeholder{ color:color-mix(in srgb, var(--muted), transparent 20%) }
+  select option{ background:var(--surface-strong); color:var(--text) }
   input:focus, select:focus{ box-shadow:0 0 0 8px var(--ring) }
 
   .io{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px }
   @media (max-width:820px){ .io{ grid-template-columns:1fr } }
 
   .box{
-    background:linear-gradient(180deg, var(--surface), rgba(255,255,255,.5));
-    padding:12px; border-radius:14px; border:1px solid rgba(0,0,0,.06);
+    background:var(--box-bg);
+    padding:12px; border-radius:14px; border:1px solid var(--border);
     backdrop-filter:saturate(140%) blur(4px);
-  }
-  @media (prefers-color-scheme: dark){
-    .box{ background:linear-gradient(180deg, rgba(28,28,32,.9), rgba(28,28,32,.7)); border-color:rgba(255,255,255,.06) }
   }
   .box h4{ margin:0 0 6px; font-size:13px; color:var(--muted); font-weight:600 }
   .kv{ font-variant-numeric:tabular-nums; font-size:16px }
 
   .disclosure{
-    margin-top:10px; border-radius:14px; border:1px solid rgba(0,0,0,.06); overflow:hidden;
+    margin-top:10px; border-radius:14px; border:1px solid var(--border); overflow:hidden;
   }
   .disclosure summary{
     list-style:none; cursor:pointer; padding:12px 14px; font-weight:600; color:var(--text);
-    background:linear-gradient(180deg, rgba(0,0,0,.03), rgba(0,0,0,0));
+    background:var(--field-bg);
     display:flex; align-items:center; justify-content:space-between; gap:8px;
   }
   /* Make Conversions dropdown headers lighter */
@@ -141,7 +256,7 @@
   .disclosure summary::-webkit-details-marker{ display:none }
   .chev{ transition:transform var(--dur-fast) var(--ease) }
   details[open] .chev{ transform:rotate(90deg) }
-  .disclosure .content{ padding:12px 14px; border-top:1px solid rgba(0,0,0,.06); animation:fadeSlideIn var(--dur-med) var(--ease) }
+  .disclosure .content{ padding:12px 14px; border-top:1px solid var(--divider); animation:fadeSlideIn var(--dur-med) var(--ease) }
 
   .note{ margin-top:12px; color:var(--muted); font-size:13px }
   .footer{ margin-top:16px; color:var(--muted); font-size:12px }
@@ -154,65 +269,59 @@
 
   /* ===== Perf output (C172) ===== */
   .perf-output{
-    background:#f0f2f5; border-radius:14px; padding:14px; margin-top:14px;
+    background:var(--soft-bg); border-radius:14px; padding:14px; margin-top:14px;
   }
   .perf-output h4{ margin:4px 0 10px }
   .perf-output .io{ margin-top:10px }
   .perf-output .box{ display:flex; flex-direction:column; gap:10px }
   .perf-output .kv{ line-height:1.6 }
-  @media (prefers-color-scheme: dark){ .perf-output{ background:#2c2c2e } }
 
   /* ===== Groundspeed helper (scoped) ===== */
-  #gsHelper{ background:#f2f2f7; border-radius:14px; padding:0; margin:14px 0; overflow:hidden }
+  #gsHelper{ background:var(--soft-bg); border-radius:14px; padding:0; margin:14px 0; overflow:hidden }
   #gsHelper > summary{
     background:inherit; padding:12px 14px; font-weight:600; font-size:15px; color:var(--text);
-    cursor:pointer; border-bottom:1px solid rgba(0,0,0,.06); display:flex; justify-content:center; align-items:center; position:relative;
+    cursor:pointer; border-bottom:1px solid var(--divider); display:flex; justify-content:center; align-items:center; position:relative;
   }
   #gsHelper > summary .chev{ position:absolute; right:14px; transition:transform .2s ease }
   #gsHelper[open] > summary .chev{ transform:rotate(90deg) }
   #gsHelper > summary::-webkit-details-marker{ display:none }
   #gsHelper .content{ padding:14px }
   #gsHelper .box{
-    background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:12px; padding:10px 12px; margin-top:10px;
+    background:var(--surface-strong); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-top:10px;
     box-shadow:0 1px 3px rgba(0,0,0,.08);
   }
   #gsHelper .box h4{
-    margin-top:0; font-weight:600; color:#111; border-bottom:1px solid rgba(0,0,0,.06); padding-bottom:4px; margin-bottom:8px;
+    margin-top:0; font-weight:600; color:var(--text); border-bottom:1px solid var(--divider); padding-bottom:4px; margin-bottom:8px;
   }
   /* make fields inside gsHelper look more “cardy” without touching global .field */
   #gsHelper .field{
-    background:#fafafa; border:1px solid rgba(0,0,0,.12); border-radius:10px; padding:10px 12px; margin-bottom:12px;
+    background:var(--field-bg); border:1px solid var(--field-border); border-radius:10px; padding:10px 12px; margin-bottom:12px;
   }
-  #gsHelper .field label{ display:block; font-weight:600; color:#222; margin-bottom:6px }
-  @media (prefers-color-scheme: dark){
-    #gsHelper{ background:#2c2c2e }
-    #gsHelper > summary{ color:#f2f2f7; border-bottom:1px solid rgba(255,255,255,.08) }
-  }
+  #gsHelper .field label{ display:block; font-weight:600; color:var(--text); margin-bottom:6px }
 
   /* ===== Lat/Long UI bits (scoped) ===== */
-  .gc-seg-row{ display:flex; align-items:center; gap:6px; margin-top:4px }
-  .gc-seg{ display:flex; align-items:center; gap:6px }
+  #panel-gc .field{ min-width:0 }
+  .gc-seg-row{ display:block; width:100%; min-width:0; margin-top:4px }
+  .gc-seg{
+    display:grid;
+    grid-template-columns:minmax(44px,1.15fr) auto minmax(42px,1fr) auto minmax(42px,1fr);
+    align-items:center; gap:4px; width:100%; min-width:0;
+  }
   .gc-seg .seg{
-    height:34px; padding:6px 8px; border:1px solid rgba(0,0,0,.12); border-radius:8px; background:#fff;
-    width:60px; text-align:center;
+    height:34px; padding:6px 8px; border:1px solid var(--control-border); border-radius:8px; background:var(--control-bg);
+    width:100%; min-width:0; text-align:center;
   }
-  .gc-seg .seg.dd{ width:64px }
+  .gc-seg .seg.dd{ width:100% }
   .gc-seg .sep{ color:var(--muted); user-select:none }
-  @media (prefers-color-scheme: dark){
-    .gc-seg .seg{ background:#1f1f23; color:#f2f2f7; border-color:rgba(255,255,255,.08) }
-  }
   .field-head{
     display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; margin-bottom:4px;
   }
   .field-head label{ margin:0; font-weight:500 }
   .hemi-row{ display:flex; gap:8px }
   .hemi-btn{
-    border:1px solid rgba(0,0,0,.15); padding:4px 10px; border-radius:10px; font-size:12px; cursor:pointer; background:#fff; color:#111;
+    border:1px solid var(--control-border); padding:4px 10px; border-radius:10px; font-size:12px; cursor:pointer; background:var(--control-bg); color:var(--text);
   }
   .hemi-btn[aria-pressed="true"]{ background:var(--accent); color:#fff; border-color:transparent }
-  @media (prefers-color-scheme: dark){
-    .hemi-btn{ background:#1f1f23; color:#f2f2f7; border-color:rgba(255,255,255,.12) }
-  }
   .btn.tiny.clear-btn,
   .field .clear-btn{
     font-size:14px; padding:2px 6px; border-radius:6px; background:var(--surface); color:var(--muted); cursor:pointer;
@@ -223,10 +332,9 @@
   /* ===== Small helpers ===== */
   .oat-wrap{ position:relative }
   .oat-sign-btn{
-    position:absolute; right:10px; top:34px; border:0; background:#e5e5ea; color:#111;
+    position:absolute; right:10px; top:34px; border:0; background:var(--secondary-bg); color:var(--secondary-text);
     padding:4px 8px; border-radius:10px; font-size:12px; cursor:pointer;
   }
-  @media (prefers-color-scheme: dark){ .oat-sign-btn{ background:#2a2a2f; color:#fff } }
 
   /* ===== Animations ===== */
   @keyframes fadeSlideIn{ to{ opacity:1; transform:translateY(0) } }
@@ -259,11 +367,11 @@
 }
 #av-conversions h2{margin:0 0 6px;font-size:18px}
 #av-conversions .muted{color:var(--muted);font-size:12px}
-#av-conversions .hr{height:1px;background:#e5e7eb;margin:10px 0;border-radius:1px}
+#av-conversions .hr{height:1px;background:var(--divider);margin:10px 0;border-radius:1px}
 #av-conversions .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 #av-conversions .field{display:flex;flex-direction:column;gap:6px}
 #av-conversions label{font-size:12px;color:var(--muted)}
-#av-conversions input,#av-conversions select{border:1px solid #e5e7eb;border-radius:10px;padding:9px 10px;font:inherit;background:#fff;outline:none}
+#av-conversions input,#av-conversions select{border:1px solid var(--control-border);border-radius:10px;padding:9px 10px;font:inherit;background:var(--control-bg);color:var(--text);outline:none}
 #av-conversions input:focus,#av-conversions select:focus{
   border-color:transparent;box-shadow:0 0 0 8px var(--ring)
 }
@@ -377,7 +485,7 @@
 .range-mini .line{
   position:relative;
   width:3px; height:110px;
-  background: var(--text, #1c1c1e);
+  background: var(--text);
   border-radius:3px; opacity:.95;
 }
 
@@ -408,7 +516,7 @@
 .pa-live-dialog{
   width: min(94vw, 720px);
   max-height: min(92dvh, 720px); /* use dynamic viewport on iOS */
-  background: var(--card, #fff);
+  background: var(--card);
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
   display:flex; flex-direction:column;
@@ -421,9 +529,9 @@
   padding: 12px 14px;
   background: inherit;
   position: sticky; top: 0; z-index: 1;
-  border-bottom: 1px solid rgba(0,0,0,.06);
+  border-bottom: 1px solid var(--divider);
 }
-.pa-live-hdg{ font-size:16px; color:var(--text, #1c1c1e); }
+.pa-live-hdg{ font-size:16px; color:var(--text); }
 
 .pa-live-body{
   padding: 14px;
@@ -438,13 +546,13 @@
 }
 .range-giant .label{ display:flex; flex-direction:column; align-items:center; text-align:center; }
 .range-giant .label .agl .num{ font-weight:700; }
-.range-giant .label .msl{ font-size:15px; color:var(--muted, #6b7280); }
+.range-giant .label .msl{ font-size:15px; color:var(--muted); }
 
 .range-giant .line{
   position:relative;
   width:6px;
   height: clamp(220px, 55dvh, 480px); /* never exceeds viewport */
-  background:var(--text, #1c1c1e);
+  background:var(--text);
   border-radius:6px; opacity:.95;
 }
 .range-giant .marker{
@@ -458,15 +566,15 @@
   display:flex; flex-direction:column; align-items:flex-start; gap:10px;
   min-width:min(48vw, 360px);
 }
-.pa-live-title{ font-size:18px; color:var(--muted, #6b7280); }
+.pa-live-title{ font-size:18px; color:var(--muted); }
 
 .pa-live-msl{
   font-size: clamp(28px, 6.6vw, 58px);
-  font-weight:700; letter-spacing:.2px; color:var(--text, #1c1c1e);
+  font-weight:700; letter-spacing:.2px; color:var(--text);
 }
 .pa-live-agl{
   font-size: clamp(16px, 3.5vw, 22px);
-  color:var(--muted, #6b7280);
+  color:var(--muted);
 }
 
 /* Stack vertically on narrow devices */
@@ -505,7 +613,7 @@
   min-width:96px; margin-left:0; padding-left:4px;
 }
 .range-mini .label{ display:flex; flex-direction:column; align-items:center; text-align:center; }
-.range-mini .line{ width:3px; height:96px; background: var(--text, #1c1c1e); border-radius:3px; opacity:.95; }
+.range-mini .line{ width:3px; height:96px; background: var(--text); border-radius:3px; opacity:.95; }
 .range-mini .marker{
   position:absolute; left:50%; transform:translateX(-50%);
   width:18px; height:3px; border-radius:2px; background:#ff9f0a;
@@ -527,7 +635,7 @@
 .pa-live-dialog{
   width: min(94vw, 680px);
   max-height: min(80dvh, 640px);   /* shorter so Safari toolbars won't overlap */
-  background: var(--card, #fff);
+  background: var(--card);
   border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
   display:flex; flex-direction:column;
@@ -538,7 +646,7 @@
   display:flex; align-items:center; justify-content:space-between;
   padding: 10px 12px;
   position: sticky; top: 0; z-index: 1;
-  border-bottom: 1px solid rgba(0,0,0,.06);
+  border-bottom: 1px solid var(--divider);
 }
 
 .pa-live-body{
@@ -642,7 +750,7 @@
 /* vertical line + marker (unchanged) */
 #panel-pivalt .range-mini .line{
   position:relative; width:3px; height:96px;
-  background: var(--text, #1c1c1e); border-radius:3px; opacity:.95;
+  background: var(--text); border-radius:3px; opacity:.95;
 }
 #panel-pivalt .range-mini .marker{
   position:absolute; left:50%; transform:translateX(-50%);
@@ -684,28 +792,20 @@
 
 /* Active / selected state */
 .mode-pills .btn.secondary.active {
-  background: #e5e5ea;   /* light gray in light mode */
-  border-color: #e5e5ea;
-  color: #111;
-}
-
-@media (prefers-color-scheme: dark){
-  .mode-pills .btn.secondary.active {
-    background: #2a2a2f; /* dark gray in dark mode */
-    border-color: #2a2a2f;
-    color: #fff;
-  }
+  background: var(--secondary-bg);
+  border-color: var(--secondary-bg);
+  color: var(--secondary-text);
 }
 /* ===== Time Organizer rows ===== */
 .to-row{
   position: relative;
   display:flex; align-items:center; gap:8px;
-  padding:8px; border:1px solid rgba(0,0,0,.06); border-radius:12px;
-  background:linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
+  padding:8px; border:1px solid var(--field-border); border-radius:12px;
+  background:var(--field-bg);
 }
 .to-title{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .to-tags{ display:flex; gap:6px; flex-wrap:wrap; }
-.to-tag{ font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid rgba(0,0,0,.08); }
+.to-tag{ font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid var(--border); }
 .to-tag.muted{ opacity:.55; }
 
 /* Actions pinned hard-right; pills expand to the left */
@@ -745,7 +845,8 @@
 .menu-btn{
   width:28px; height:28px;
   border-radius:999px; border:1px solid var(--border);
-  background:rgba(0,0,0,.04);
+  background:var(--switch-bg);
+  color:var(--text);
   line-height:26px; text-align:center; font-weight:600;
   padding:0;
 }
@@ -754,8 +855,9 @@
 .to-gap{ display:flex; justify-content:center; }
 .to-gap-btn{
   cursor:pointer; padding:4px 12px; border-radius:999px;
-  font-size:12px; border:1px solid rgba(0,0,0,.12);
-  background: rgba(0,0,0,.04);
+  font-size:12px; border:1px solid var(--control-border);
+  background: var(--switch-bg);
+  color:var(--text);
 }
 .to-gap-btn.active{
   border-color: var(--accent);
@@ -770,7 +872,7 @@
 .center-pill::before{
   content: attr(data-text);
   display:inline-block; padding:8px 16px; border-radius:999px;
-  border:1px solid var(--border); background:rgba(0,0,0,.04);
+  border:1px solid var(--border); background:var(--switch-bg);
   font-weight:600;
 }
 /* Keep -1m/+1m looking the same as before */
@@ -806,7 +908,7 @@
 /* === Tile layout base === */
 .tile{ position:relative; padding-bottom:16px; }
 .tile-head{ display:flex; gap:8px; align-items:flex-start; }
-.tile-head .title-wrap{ flex:1; min-width:0; }
+.tile-head .title-wrap{ flex:1; min-width:0; padding-right:26px; }
 .tile-head h3{ margin:0 0 4px; font-size:16px; }
 .tile-head p { margin:0; color:var(--muted); font-size:13px; }
 
@@ -900,17 +1002,338 @@
   color: #fff;
 }
 
+.flight-profile-modal{
+  position:fixed; inset:0; z-index:3000;
+  display:flex; align-items:center; justify-content:center;
+  padding:18px; background:rgba(0,0,0,.42);
+  backdrop-filter:saturate(140%) blur(8px);
+}
+.flight-profile-modal.hidden{ display:none; }
+body.fp-modal-open{ overflow:hidden; }
+.fp-dialog{
+  width:min(1080px, 100%);
+  max-height:min(92vh, 920px);
+  display:flex; flex-direction:column;
+  background:var(--card); color:var(--text);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.28);
+  overflow:hidden;
+}
+.fp-header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:14px 16px; border-bottom:1px solid var(--divider);
+  background:var(--surface);
+}
+.fp-title{ display:flex; align-items:center; gap:10px; min-width:0; }
+.fp-title h2{ margin:0; font-size:18px; line-height:1.2; }
+.fp-title i{ color:var(--accent); }
+.fp-close{
+  width:34px; height:34px; flex:0 0 auto;
+  display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid var(--control-border); border-radius:12px;
+  background:var(--control-bg); color:var(--text); cursor:pointer;
+}
+.fp-close:focus-visible{ outline:none; box-shadow:0 0 0 4px var(--ring); }
+.fp-body{ padding:14px 16px 16px; overflow:auto; }
+.fp-form{
+  display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); gap:10px;
+}
+.fp-field{ min-width:0; }
+.fp-field.sm{ grid-column:span 2; }
+.fp-field.md{ grid-column:span 3; }
+.fp-field.lg{ grid-column:span 4; }
+.fp-field.xl{ grid-column:span 6; }
+.fp-field.full{ grid-column:1 / -1; }
+.fp-actions{
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+  margin:12px 0;
+}
+.fp-rec-row{
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:6px;
+}
+.fp-rec-label{
+  width:100%; color:var(--muted); font-size:12px; line-height:1.1;
+}
+.fp-rec-preset{ min-width:78px; text-align:center; }
+.fp-info-btn{
+  width:22px; height:22px; flex:0 0 auto;
+  display:inline-flex; align-items:center; justify-content:center;
+  border:0; border-radius:999px;
+  background:transparent; color:var(--accent); cursor:pointer;
+  padding:0; font-size:13px;
+}
+.fp-info-btn:hover{ color:var(--text); }
+.fp-info-btn:focus-visible{ outline:none; box-shadow:0 0 0 3px var(--ring); }
+.fp-wind-presets{
+  display:flex; flex-wrap:wrap; gap:6px; min-height:28px;
+}
+.fp-preset{
+  border:1px solid var(--control-border); border-radius:999px;
+  background:var(--control-bg); color:var(--text); cursor:pointer;
+  padding:5px 8px; font-size:12px; line-height:1.1;
+}
+.fp-preset:hover{ border-color:var(--accent); color:var(--accent); }
+.fp-preset:focus-visible{ outline:none; box-shadow:0 0 0 3px var(--ring); }
+.fp-status{
+  min-height:22px; color:var(--muted); font-size:13px;
+}
+.fp-info-panel{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:10px; margin:10px 0 12px;
+  border:1px solid var(--border); border-radius:14px; padding:10px;
+  background:var(--box-bg); font-size:13px; color:var(--muted);
+}
+.fp-info-panel.hidden{ display:none; }
+.fp-info-panel strong{ display:block; color:var(--text); font-size:12px; margin-bottom:3px; }
+.fp-summary-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:10px; margin:10px 0 12px;
+}
+.fp-metric{
+  border:1px solid var(--border); border-radius:14px; padding:10px;
+  background:var(--box-bg);
+}
+.fp-metric h4{ margin:0 0 4px; color:var(--muted); font-size:12px; font-weight:600; }
+.fp-metric .kv{ font-size:15px; }
+.fp-map{
+  width:100%; height:min(48vh, 380px); min-height:280px;
+  border:1px solid var(--border); border-radius:14px; overflow:hidden;
+  background:var(--soft-bg);
+}
+.fp-winds-wrap{
+  margin:10px 0 0; border:1px solid var(--border); border-radius:14px;
+  background:var(--box-bg); overflow:auto;
+}
+.fp-winds-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 12px; border-bottom:1px solid var(--divider);
+}
+.fp-winds-head h4{ margin:0; font-size:13px; color:var(--muted); font-weight:700; }
+.fp-winds-age{ color:var(--muted); font-size:12px; white-space:nowrap; }
+.fp-winds-table{
+  width:100%; border-collapse:collapse; min-width:720px; font-size:13px;
+}
+.fp-winds-table th,.fp-winds-table td{
+  padding:8px 10px; text-align:left; border-bottom:1px solid var(--divider);
+  font-variant-numeric:tabular-nums;
+}
+.fp-winds-table th{ color:var(--muted); font-size:12px; font-weight:700; }
+.fp-winds-table tr:last-child td{ border-bottom:0; }
+.fp-winds-note{ padding:9px 12px; color:var(--muted); font-size:12px; }
+.fp-profile-wrap{
+  margin-top:10px; border:1px solid var(--border); border-radius:14px;
+  background:var(--box-bg); overflow:hidden;
+}
+.fp-profile{
+  width:100%; height:190px; display:block;
+  color:var(--text); background:transparent;
+}
+.fp-route-list{
+  display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0;
+}
+.fp-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 9px; border:1px solid var(--border); border-radius:999px;
+  background:var(--surface-strong); color:var(--text); font-size:13px;
+}
+.fp-warn{
+  margin-top:10px; color:var(--muted); font-size:12px; line-height:1.4;
+}
+.fp-warn strong{ color:var(--text); }
+.leaflet-container{ font:inherit; color:#1c1c1e; }
+.fp-leg-label.leaflet-tooltip{
+  padding:5px 8px; border:1px solid rgba(0,0,0,.18); border-radius:999px;
+  background:rgba(255,255,255,.92); color:#111; box-shadow:0 2px 8px rgba(0,0,0,.16);
+  font:700 12px/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+  white-space:nowrap;
+}
+html[data-theme="dark"] .leaflet-control-attribution,
+html[data-theme="dark"] .leaflet-control-zoom a{
+  background:#24242a; color:#f2f2f7; border-color:rgba(255,255,255,.16);
+}
+html[data-theme="dark"] .fp-leg-label.leaflet-tooltip{
+  background:rgba(30,30,35,.94); color:#f2f2f7; border-color:rgba(255,255,255,.18);
+}
+@media (max-width:820px){
+  .fp-field.sm,.fp-field.md,.fp-field.lg,.fp-field.xl{ grid-column:span 6; }
+}
+@media (max-width:560px){
+  .flight-profile-modal{ padding:8px; align-items:stretch; }
+  .fp-dialog{ max-height:calc(100vh - 16px); border-radius:16px; }
+  .fp-header{ padding:12px; }
+  .fp-body{ padding:12px; }
+  .fp-field.sm,.fp-field.md,.fp-field.lg,.fp-field.xl{ grid-column:1 / -1; }
+  .fp-actions .btn{ flex:1 1 auto; }
+  .fp-map{ min-height:250px; height:46vh; }
+}
+
 </style>
 
 </head>
 <body>
 <div class="app">
-  <h1>Aviation Calculator</h1>
-  <div class="subtitle">Offline, single file. Apple-like quick fades. Click a tile to open. Values auto-compute as you type.</div>
+  <div class="app-header">
+    <div class="app-title">
+      <h1>Aviation Calculator</h1>
+    </div>
+    <div class="header-actions">
+      <button class="theme-toggle" type="button" id="FLIGHT_PROFILE_OPEN" aria-label="Open flight profile planner">
+        <i class="fa-solid fa-route" aria-hidden="true"></i>
+        <span>Profile</span>
+      </button>
+      <button class="theme-toggle" type="button" id="THEME_TOGGLE" aria-label="Switch to dark mode">
+        <i class="fa-solid fa-moon" aria-hidden="true" id="THEME_ICON"></i>
+        <span id="THEME_LABEL">Dark</span>
+      </button>
+      <div class="home-mode-switch" role="tablist" aria-label="Calculator mode">
+        <button type="button" class="active" role="tab" aria-selected="true" data-home-mode="basic">Basic</button>
+        <button type="button" role="tab" aria-selected="false" data-home-mode="advanced">Advanced</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="flight-profile-modal" class="flight-profile-modal hidden" role="dialog" aria-modal="true" aria-labelledby="FP_TITLE" aria-hidden="true">
+    <div class="fp-dialog">
+      <div class="fp-header">
+        <div class="fp-title">
+          <i class="fa-solid fa-route" aria-hidden="true"></i>
+          <h2 id="FP_TITLE">Flight Profile</h2>
+        </div>
+        <button class="fp-close" type="button" id="FP_CLOSE" aria-label="Close flight profile">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="fp-body">
+        <div class="fp-form">
+          <div class="field fp-field md">
+            <label for="FP_DEP">Departure airport</label>
+            <input id="FP_DEP" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABE or KABE">
+          </div>
+          <div class="field fp-field md">
+            <label for="FP_DEST">Destination airport</label>
+            <input id="FP_DEST" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="RDG">
+          </div>
+          <div class="field fp-field xl">
+            <label for="FP_ROUTE">Route points between</label>
+            <input id="FP_ROUTE" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Airports or lat,lon points, separated by spaces or commas">
+          </div>
+          <div class="field fp-field sm">
+            <label for="FP_RULES">Rules</label>
+            <select id="FP_RULES">
+              <option value="vfr">VFR</option>
+              <option value="ifr">IFR</option>
+            </select>
+          </div>
+          <div class="field fp-field md">
+            <label for="FP_CRUISE">Cruise altitude (ft MSL)</label>
+            <input id="FP_CRUISE" type="text" inputmode="numeric" autocomplete="off" placeholder="optional">
+            <div class="fp-rec-row">
+              <span class="fp-rec-label">Recommended</span>
+              <button class="fp-preset fp-rec-preset" type="button" id="FP_USE_REC">-</button>
+              <button class="fp-info-btn" type="button" id="FP_INFO" aria-label="Show recommendation and terrain details" aria-expanded="false">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+          <div class="field fp-field sm">
+            <label for="FP_TAS">TAS (kt)</label>
+            <input id="FP_TAS" type="text" inputmode="decimal" autocomplete="off" placeholder="120">
+          </div>
+          <div class="field fp-field sm">
+            <label for="FP_WIND_FROM">Wind from</label>
+            <input id="FP_WIND_FROM" type="text" inputmode="numeric" autocomplete="off" placeholder="270">
+            <div class="fp-wind-presets" id="FP_WIND_FROM_PRESETS" aria-label="Wind direction presets"></div>
+          </div>
+          <div class="field fp-field sm">
+            <label for="FP_WIND_SPEED">Wind kt</label>
+            <input id="FP_WIND_SPEED" type="text" inputmode="decimal" autocomplete="off" placeholder="18">
+            <div class="fp-wind-presets" id="FP_WIND_SPEED_PRESETS" aria-label="Wind speed presets"></div>
+          </div>
+          <div class="field fp-field sm">
+            <label for="FP_OAT">Temp C</label>
+            <input id="FP_OAT" type="text" inputmode="decimal" autocomplete="off" placeholder="-5">
+          </div>
+        </div>
+
+        <div class="fp-actions">
+          <button class="btn secondary" type="button" id="FP_APPLY"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Apply to calculators</button>
+        </div>
+
+        <div class="fp-status" id="FP_STATUS">Enter a departure and destination to build a profile.</div>
+
+        <div class="fp-info-panel hidden" id="FP_INFO_PANEL" aria-live="polite">
+          <div>
+            <strong>Recommended Cruise</strong>
+            <span id="FP_RECOMMENDED">-</span>
+          </div>
+          <div>
+            <strong>Terrain Corridor</strong>
+            <span id="FP_TERRAIN">-</span>
+          </div>
+        </div>
+
+        <div id="FP_MAP" class="fp-map" aria-label="Sectional route map"></div>
+        <div class="fp-winds-wrap" aria-live="polite">
+          <div class="fp-winds-head">
+            <h4>Winds Aloft</h4>
+            <div class="fp-winds-age" id="FP_WINDS_AGE">-</div>
+          </div>
+          <table class="fp-winds-table">
+            <thead>
+              <tr>
+                <th>Leg</th>
+                <th>FD station</th>
+                <th>Course</th>
+                <th>Wind</th>
+                <th>Temp</th>
+                <th>Head/Tail</th>
+                <th>Crosswind</th>
+                <th>GS</th>
+              </tr>
+            </thead>
+            <tbody id="FP_WINDS_BODY">
+              <tr><td colspan="8">Build a route to load winds aloft.</td></tr>
+            </tbody>
+          </table>
+          <div class="fp-winds-note" id="FP_WINDS_NOTE">FD winds are true-direction forecasts; components use each leg true course.</div>
+        </div>
+        <div class="fp-profile-wrap">
+          <svg id="FP_PROFILE" class="fp-profile" role="img" aria-label="Mini route profile" viewBox="0 0 900 190"></svg>
+        </div>
+        <div id="FP_ROUTE_LIST" class="fp-route-list" aria-live="polite"></div>
+        <div class="fp-warn">
+          <strong>Planning aid only.</strong> Verify route, terrain, obstacles, airspace, NOTAMs, charts, weather, and regulatory altitude requirements with official sources before flight.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="airport-context" aria-label="Airport weather and runway context">
+    <div class="toolbar">
+      <div class="field airport-code">
+        <label for="WX_AIRPORT">Airport</label>
+        <input id="WX_AIRPORT" type="text" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="ABE or KABE">
+      </div>
+      <div class="field runway-select">
+        <label for="WX_RUNWAY">Runway</label>
+        <select id="WX_RUNWAY" disabled>
+          <option value="">Load an airport first</option>
+        </select>
+      </div>
+      <button class="btn secondary" type="button" id="WX_LOAD">Load</button>
+      <button class="btn secondary" type="button" id="WX_CURRENT">Current Location</button>
+      <button class="btn" type="button" id="WX_REFRESH">Refresh</button>
+    </div>
+    <div class="airport-context-status" aria-live="polite">
+      <div class="wx-summary" id="WX_SUMMARY">No airport loaded.</div>
+      <div class="wx-age" id="WX_AGE">Report age: -</div>
+    </div>
+  </section>
 
   <!-- Tiles -->
   <div id="tiles" class="grid">
-    <div class="tile" data-panel="c172-perf">
+    <div class="tile" data-panel="c172-perf" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-chart-simple tile-icon"></i> C172 Performance</h3>
@@ -919,7 +1342,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="conversions">
+    <div class="tile" data-panel="conversions" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-right-left tile-icon"></i> Conversions</h3>
@@ -928,7 +1351,16 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="toc-tod">
+    <div class="tile" data-panel="runway-wind" data-home-set="basic" data-open-detail="wind-runway">
+      <div class="tile-head">
+        <div class="title-wrap">
+          <h3><i class="fa-solid fa-plane-arrival tile-icon"></i> Runway Wind</h3>
+          <p>Headwind, tailwind, crosswind, and limit check</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile" data-panel="toc-tod" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-arrows-up-down tile-icon"></i> TOC &amp; TOD</h3>
@@ -937,7 +1369,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="etp-pnr">
+    <div class="tile" data-panel="etp-pnr" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-arrows-left-right-to-line tile-icon"></i> ETP &amp; PNR</h3>
@@ -946,7 +1378,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="meet">
+    <div class="tile" data-panel="meet" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-people-arrows-left-right tile-icon"></i> Meetpoint</h3>
@@ -955,7 +1387,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="vortri">
+    <div class="tile" data-panel="vortri" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-compass-drafting tile-icon"></i> VOR Triangle</h3>
@@ -964,7 +1396,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="gc">
+    <div class="tile" data-panel="gc" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-globe tile-icon"></i> Lat/Long</h3>
@@ -973,7 +1405,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="tas">
+    <div class="tile" data-panel="tas" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-gauge-high tile-icon"></i> True Airspeed</h3>
@@ -982,7 +1414,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="sdt">
+    <div class="tile" data-panel="sdt" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-stopwatch tile-icon"></i> Speed • Distance • Time</h3>
@@ -991,7 +1423,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="wind">
+    <div class="tile" data-panel="wind" data-home-set="advanced" data-open-detail="wind-enroute">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-wind tile-icon"></i> Wind • Angles</h3>
@@ -1000,7 +1432,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="altitudes">
+    <div class="tile" data-panel="altitudes" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-mountain tile-icon"></i> Altitudes</h3>
@@ -1009,7 +1441,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="fpm">
+    <div class="tile" data-panel="fpm" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-chart-line tile-icon"></i> IFR Gradients</h3>
@@ -1018,7 +1450,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="pivalt">
+    <div class="tile" data-panel="pivalt" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-crosshairs tile-icon"></i> Pivotal Altitude</h3>
@@ -1027,7 +1459,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="sixty">
+    <div class="tile" data-panel="sixty" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-ruler-combined tile-icon"></i> 60-to-1 Rule</h3>
@@ -1036,7 +1468,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="clouds">
+    <div class="tile" data-panel="clouds" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-cloud tile-icon"></i> Clouds (Base/Top/Thickness)</h3>
@@ -1045,7 +1477,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="hydro">
+    <div class="tile" data-panel="hydro" data-home-set="advanced">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-droplet tile-icon"></i> Hydroplaning</h3>
@@ -1054,7 +1486,7 @@
       </div>
     </div>
 
-    <div class="tile" data-panel="timeorg">
+    <div class="tile" data-panel="timeorg" data-home-set="basic">
       <div class="tile-head">
         <div class="title-wrap">
           <h3><i class="fa-solid fa-calendar-days tile-icon"></i> Time Organizer</h3>
@@ -2018,7 +2450,7 @@
     <button class="btn ghost" id="clear-wind">Clear</button>
   </div>
 
-  <details class="disclosure" open>
+  <details class="disclosure" id="wind-enroute" open>
     <summary>
       <span>Enroute: WCA • Heading • GS</span>
       <span class="chev">›</span>
@@ -2068,7 +2500,7 @@
     </div>
   </details>
 
-  <details class="disclosure">
+  <details class="disclosure" id="wind-runway">
     <summary>
       <span>Runway: head/tailwind & crosswind</span>
       <span class="chev">›</span>
@@ -3160,6 +3592,54 @@
 </div>
 
 <script>
+(function ThemeToggle(){
+  const KEY = 'aviationTheme';
+  const root = document.documentElement;
+  const btn = document.getElementById('THEME_TOGGLE');
+  const icon = document.getElementById('THEME_ICON');
+  const label = document.getElementById('THEME_LABEL');
+  const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
+
+  function systemTheme(){
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function currentTheme(){
+    const saved = (() => {
+      try { return localStorage.getItem(KEY); } catch (_) { return null; }
+    })();
+    if (saved === 'dark' || saved === 'light') return saved;
+    return root.dataset.theme === 'dark' || root.dataset.theme === 'light' ? root.dataset.theme : systemTheme();
+  }
+  function updateThemeMeta(theme){
+    const color = theme === 'dark' ? '#0c0c0f' : '#f5f5f7';
+    themeMetas.forEach(meta => meta.setAttribute('content', color));
+  }
+  function applyTheme(theme, persist){
+    const next = theme === 'dark' ? 'dark' : 'light';
+    root.dataset.theme = next;
+    root.style.colorScheme = next;
+    updateThemeMeta(next);
+    if (btn) {
+      btn.setAttribute('aria-label', next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+      btn.setAttribute('aria-pressed', next === 'dark' ? 'true' : 'false');
+    }
+    if (icon) {
+      icon.className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+    if (label) label.textContent = next === 'dark' ? 'Light' : 'Dark';
+    if (persist) {
+      try { localStorage.setItem(KEY, next); } catch (_) {}
+    }
+  }
+
+  applyTheme(currentTheme(), false);
+  btn?.addEventListener('click', () => {
+    applyTheme(root.dataset.theme === 'dark' ? 'light' : 'dark', true);
+  });
+})();
+</script>
+
+<script>
 (function TimeOrganizer(){
   const root = document.getElementById('panel-timeorg');
   if(!root) return;
@@ -4006,9 +4486,13 @@
 <script>
 /* ===== Router ===== */
 const tiles = document.getElementById('tiles');
+const HOME_MODE_KEY = 'aviationHomeMode';
+const homeModeButtons = document.querySelectorAll('[data-home-mode]');
+let activeHomeMode = 'basic';
 const panels = {
   'c172-perf': document.getElementById('panel-c172-perf'),
   'conversions': document.getElementById('panel-conversions'),
+  'runway-wind': document.getElementById('panel-wind'),
   'etp-pnr': document.getElementById('panel-etp-pnr'),
   'meet':    document.getElementById('panel-meet'),
   'vortri':  document.getElementById('panel-vortri'),
@@ -4026,8 +4510,64 @@ const panels = {
   'timeorg': document.getElementById('panel-timeorg')
 };
 
+function normalizeHomeMode(mode) {
+  return mode === 'advanced' ? 'advanced' : 'basic';
+}
+
+function readStoredHomeMode() {
+  try {
+    return normalizeHomeMode(localStorage.getItem(HOME_MODE_KEY));
+  } catch (_) {
+    return 'basic';
+  }
+}
+
+function saveStoredHomeMode(mode) {
+  try {
+    localStorage.setItem(HOME_MODE_KEY, mode);
+  } catch (_) {}
+}
+
+function tileMatchesHomeMode(tile, mode) {
+  const sets = (tile.dataset.homeSet || 'advanced').split(/\s+/);
+  return sets.includes(mode);
+}
+
+function applyHomeMode(mode, options = {}) {
+  const nextMode = normalizeHomeMode(mode);
+  const persist = options.persist !== false;
+  activeHomeMode = nextMode;
+
+  tiles.querySelectorAll('.tile').forEach(tile => {
+    const visible = tileMatchesHomeMode(tile, nextMode);
+    tile.classList.toggle('mode-hidden', !visible);
+    tile.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  });
+
+  homeModeButtons.forEach(button => {
+    const active = button.dataset.homeMode === nextMode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+
+  if (persist) saveStoredHomeMode(nextMode);
+}
+
+function openPanelDetail(panel, detailId) {
+  if (!detailId) return null;
+  const detail = document.getElementById(detailId);
+  if (!detail || !panel.contains(detail) || detail.tagName !== 'DETAILS') return null;
+
+  panel.querySelectorAll('details[open]').forEach(other => {
+    if (other !== detail) other.open = false;
+  });
+  detail.open = true;
+  return detail;
+}
+
 function hideAllPanels() {
   tiles.style.display = 'grid';
+  applyHomeMode(activeHomeMode, { persist:false });
   Object.values(panels).forEach(p => {
     if (p) {
       p.classList.remove('visible');
@@ -4037,9 +4577,10 @@ function hideAllPanels() {
   });
 }
 
-function showPanel(id) {
+function showPanel(id, options = {}) {
   const target = panels[id];
   if (!target) return;
+  const openedDetail = openPanelDetail(target, options.openDetail);
   
   tiles.style.display = 'none';
   
@@ -4054,12 +4595,19 @@ function showPanel(id) {
   
   target.classList.remove('hidden');
   target.setAttribute('aria-hidden','false');
-  requestAnimationFrame(() => { target.classList.add('visible'); });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  requestAnimationFrame(() => {
+    target.classList.add('visible');
+    if (openedDetail) {
+      openedDetail.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
 }
 
 function showTiles() {
   tiles.style.display = 'grid';
+  applyHomeMode(activeHomeMode, { persist:false });
   Object.values(panels).forEach(p => {
     if (p) {
       p.classList.remove('visible');
@@ -4072,11 +4620,19 @@ function showTiles() {
 tiles.addEventListener('click', (e) => {
   const t = e.target.closest('.tile');
   if (!t) return;
-  showPanel(t.dataset.panel);
+  showPanel(t.dataset.panel, { openDetail: t.dataset.openDetail });
+});
+
+homeModeButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    applyHomeMode(button.dataset.homeMode);
+    showTiles();
+  });
 });
 
 document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', showTiles));
 
+applyHomeMode(readStoredHomeMode(), { persist:false });
 hideAllPanels();
 
 // ===== One-open-at-a-time for every panel (robust) =====
@@ -8367,6 +8923,1554 @@ document.addEventListener('click', (ev) => {
 })();
 </script>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function FlightProfile(){
+  const KEY = 'aviationFlightProfile';
+  const RUNWAY_URL = 'https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Runways_View/FeatureServer/0/query';
+  const SECTIONAL_TILE = 'https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/{z}/{y}/{x}';
+  const ELEVATION_URL = 'https://api.open-elevation.com/api/v1/lookup';
+  const FD1_URL = 'https://forecast.weather.gov/product.php?format=TXT&glossary=0&issuedby=US1&product=FD1&site=NWS&version=1';
+  const NM_EARTH = 3440.065;
+  const els = {
+    open: document.getElementById('FLIGHT_PROFILE_OPEN'),
+    modal: document.getElementById('flight-profile-modal'),
+    close: document.getElementById('FP_CLOSE'),
+    dep: document.getElementById('FP_DEP'),
+    dest: document.getElementById('FP_DEST'),
+    route: document.getElementById('FP_ROUTE'),
+    rules: document.getElementById('FP_RULES'),
+    cruise: document.getElementById('FP_CRUISE'),
+    tas: document.getElementById('FP_TAS'),
+    windFrom: document.getElementById('FP_WIND_FROM'),
+    windSpeed: document.getElementById('FP_WIND_SPEED'),
+    windFromPresets: document.getElementById('FP_WIND_FROM_PRESETS'),
+    windSpeedPresets: document.getElementById('FP_WIND_SPEED_PRESETS'),
+    oat: document.getElementById('FP_OAT'),
+    useRec: document.getElementById('FP_USE_REC'),
+    info: document.getElementById('FP_INFO'),
+    infoPanel: document.getElementById('FP_INFO_PANEL'),
+    apply: document.getElementById('FP_APPLY'),
+    status: document.getElementById('FP_STATUS'),
+    recommended: document.getElementById('FP_RECOMMENDED'),
+    terrain: document.getElementById('FP_TERRAIN'),
+    map: document.getElementById('FP_MAP'),
+    windsAge: document.getElementById('FP_WINDS_AGE'),
+    windsBody: document.getElementById('FP_WINDS_BODY'),
+    windsNote: document.getElementById('FP_WINDS_NOTE'),
+    profile: document.getElementById('FP_PROFILE'),
+    list: document.getElementById('FP_ROUTE_LIST')
+  };
+  if (!els.open || !els.modal) return;
+
+  let map = null;
+  let mapLayers = [];
+  let legLabelLayers = [];
+  let lastPlan = null;
+  let lastUnresolved = [];
+  let autoBuildTimer = 0;
+  let windRefreshTimer = 0;
+  let buildSeq = 0;
+  let windSeq = 0;
+  let fdCache = null;
+  const fdStationCoordCache = new Map();
+  let tileErrorShown = false;
+
+  const toRad = d => d * Math.PI / 180;
+  const toDeg = r => r * 180 / Math.PI;
+  const clamp360 = d => ((d % 360) + 360) % 360;
+  const finite = v => Number.isFinite(v);
+  const num = v => {
+    const s = String(v ?? '').trim().replace(/,/g, '');
+    if (!s) return NaN;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const ft = m => Number(m) * 3.280839895;
+  const fmt = (v, dp = 0) => Number.isFinite(v) ? Number(v.toFixed(dp)).toLocaleString() : '-';
+  const pad3 = v => String(Math.round(clamp360(v)) || 360).padStart(3, '0');
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+  function setText(el, value){ if (el) el.textContent = value; }
+  function setStatus(value){ setText(els.status, value); }
+  function setBusy(on){
+    [els.useRec, els.apply].forEach(btn => {
+      if (btn) btn.disabled = !!on;
+    });
+  }
+  function fetchJson(url, init){
+    return fetch(url, init || { headers:{ Accept:'application/json, application/geo+json' } }).then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    });
+  }
+  function fetchText(url){
+    return fetch(url, { headers:{ Accept:'text/html,text/plain' } }).then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.text();
+    });
+  }
+  function normalizeAirportCode(raw){
+    return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  }
+  function splitAirportCode(raw){
+    const code = normalizeAirportCode(raw);
+    if (!code) return { icao:'', faa:'' };
+    if (code.length === 3) return { icao:'K' + code, faa:code };
+    if (code.length === 4 && code[0] === 'K') return { icao:code, faa:code.slice(1) };
+    return { icao:code, faa:code.length > 3 ? code.slice(-3) : code };
+  }
+  function parseRouteTokens(value){
+    const tokens = [];
+    const re = /(-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?)|([A-Za-z0-9]{2,5})/g;
+    let match;
+    while ((match = re.exec(String(value || '')))) tokens.push((match[1] || match[2]).toUpperCase());
+    return tokens;
+  }
+  function parseLatLon(token){
+    const match = /^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(String(token || '').trim());
+    if (!match) return null;
+    const lat = Number(match[1]);
+    const lon = Number(match[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    return { lat, lon };
+  }
+  function distanceNm(a, b){
+    const p1 = toRad(a.lat), p2 = toRad(b.lat);
+    const dP = toRad(b.lat - a.lat), dL = toRad(b.lon - a.lon);
+    const h = Math.sin(dP / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dL / 2) ** 2;
+    return 2 * NM_EARTH * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+  function bearingDeg(a, b){
+    const p1 = toRad(a.lat), p2 = toRad(b.lat);
+    const dL = toRad(b.lon - a.lon);
+    const y = Math.sin(dL) * Math.cos(p2);
+    const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dL);
+    return clamp360(toDeg(Math.atan2(y, x)));
+  }
+  function destinationPoint(point, bearing, nm){
+    const d = nm / NM_EARTH;
+    const br = toRad(bearing);
+    const p1 = toRad(point.lat);
+    const l1 = toRad(point.lon);
+    const p2 = Math.asin(Math.sin(p1) * Math.cos(d) + Math.cos(p1) * Math.sin(d) * Math.cos(br));
+    const l2 = l1 + Math.atan2(Math.sin(br) * Math.sin(d) * Math.cos(p1), Math.cos(d) - Math.sin(p1) * Math.sin(p2));
+    return { lat:toDeg(p2), lon:((toDeg(l2) + 540) % 360) - 180 };
+  }
+  function intermediatePoint(a, b, t){
+    const d = distanceNm(a, b) / NM_EARTH;
+    if (!Number.isFinite(d) || d === 0) return { lat:a.lat, lon:a.lon };
+    const p1 = toRad(a.lat), l1 = toRad(a.lon);
+    const p2 = toRad(b.lat), l2 = toRad(b.lon);
+    const A = Math.sin((1 - t) * d) / Math.sin(d);
+    const B = Math.sin(t * d) / Math.sin(d);
+    const x = A * Math.cos(p1) * Math.cos(l1) + B * Math.cos(p2) * Math.cos(l2);
+    const y = A * Math.cos(p1) * Math.sin(l1) + B * Math.cos(p2) * Math.sin(l2);
+    const z = A * Math.sin(p1) + B * Math.sin(p2);
+    return { lat:toDeg(Math.atan2(z, Math.sqrt(x * x + y * y))), lon:toDeg(Math.atan2(y, x)) };
+  }
+  function buildLegs(points){
+    let totalNm = 0;
+    const legs = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const dist = distanceNm(points[i], points[i + 1]);
+      const course = bearingDeg(points[i], points[i + 1]);
+      legs.push({ from:points[i], to:points[i + 1], distNm:dist, course, startNm:totalNm });
+      totalNm += dist;
+    }
+    return { legs, totalNm };
+  }
+  async function fetchNwsStation(icao){
+    const data = await fetchJson(`https://api.weather.gov/stations/${encodeURIComponent(icao)}`);
+    const coords = data?.geometry?.coordinates || [];
+    const props = data?.properties || {};
+    const lat = Number(coords[1]);
+    const lon = Number(coords[0]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error('No station coordinates');
+    return {
+      lat, lon,
+      label:props.stationIdentifier || icao,
+      name:props.name || '',
+      elevationFt:Number.isFinite(Number(props.elevation?.value)) ? ft(props.elevation.value) : NaN,
+      source:'NWS station'
+    };
+  }
+  async function fetchRunwayAirport(faa){
+    if (!faa) throw new Error('No FAA airport code');
+    const where = `ARPT_ID='${String(faa).replace(/'/g, "''")}'`;
+    const params = new URLSearchParams({
+      f:'json',
+      where,
+      outFields:'ARPT_ID,ARPT_NAME,RWY_ID,LAT1_DECIMAL,LONG1_DECIMAL,LAT2_DECIMAL,LONG2_DECIMAL',
+      returnGeometry:'false',
+      orderByFields:'RWY_ID'
+    });
+    const data = await fetchJson(`${RUNWAY_URL}?${params.toString()}`);
+    const features = data.features || [];
+    const coords = [];
+    let name = '';
+    features.forEach(feature => {
+      const a = feature.attributes || {};
+      name = name || a.ARPT_NAME || '';
+      [
+        [a.LAT1_DECIMAL, a.LONG1_DECIMAL],
+        [a.LAT2_DECIMAL, a.LONG2_DECIMAL]
+      ].forEach(pair => {
+        const lat = Number(pair[0]);
+        const lon = Number(pair[1]);
+        if (Number.isFinite(lat) && Number.isFinite(lon)) coords.push({ lat, lon });
+      });
+    });
+    if (!coords.length) throw new Error('No runway coordinates');
+    const lat = coords.reduce((sum, p) => sum + p.lat, 0) / coords.length;
+    const lon = coords.reduce((sum, p) => sum + p.lon, 0) / coords.length;
+    return { lat, lon, label:faa, name, elevationFt:NaN, source:'FAA runway center' };
+  }
+  async function resolveAirport(token){
+    const codes = splitAirportCode(token);
+    if (!codes.icao) throw new Error('Bad airport code');
+    const [stationRes, runwayRes] = await Promise.allSettled([
+      fetchNwsStation(codes.icao),
+      fetchRunwayAirport(codes.faa)
+    ]);
+    const station = stationRes.status === 'fulfilled' ? stationRes.value : null;
+    const runway = runwayRes.status === 'fulfilled' ? runwayRes.value : null;
+    if (!station && !runway) throw new Error('Airport not found');
+    return {
+      ...(station || runway),
+      label:codes.icao,
+      faa:codes.faa,
+      icao:codes.icao,
+      name:station?.name || runway?.name || '',
+      elevationFt:Number.isFinite(station?.elevationFt) ? station.elevationFt : NaN,
+      source:station ? station.source : runway.source
+    };
+  }
+  async function resolvePoint(token, index){
+    const ll = parseLatLon(token);
+    if (ll) {
+      return {
+        ...ll,
+        label:`P${index + 1}`,
+        name:`${ll.lat.toFixed(4)}, ${ll.lon.toFixed(4)}`,
+        elevationFt:NaN,
+        source:'manual coordinate'
+      };
+    }
+    return resolveAirport(token);
+  }
+  function buildTerrainSamples(points, legs){
+    const samples = [];
+    legs.forEach(leg => {
+      const steps = Math.max(2, Math.min(14, Math.ceil(leg.distNm / 18)));
+      for (let i = 0; i <= steps; i++) {
+        const f = i / steps;
+        const center = intermediatePoint(leg.from, leg.to, f);
+        const routeNm = leg.startNm + leg.distNm * f;
+        samples.push({ ...center, routeNm, side:'center' });
+        samples.push({ ...destinationPoint(center, leg.course - 90, 4), routeNm, side:'left' });
+        samples.push({ ...destinationPoint(center, leg.course + 90, 4), routeNm, side:'right' });
+      }
+    });
+    return samples.slice(0, 120);
+  }
+  async function sampleElevations(samples){
+    if (!samples.length) return samples;
+    const chunks = [];
+    for (let i = 0; i < samples.length; i += 40) chunks.push(samples.slice(i, i + 40));
+    for (const chunk of chunks) {
+      const locations = chunk.map(p => `${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join('|');
+      const data = await fetchJson(`${ELEVATION_URL}?locations=${encodeURIComponent(locations)}`);
+      (data.results || []).forEach((result, i) => {
+        const m = Number(result.elevation);
+        if (chunk[i] && Number.isFinite(m)) chunk[i].elevationFt = ft(m);
+      });
+      await new Promise(resolve => setTimeout(resolve, 90));
+    }
+    return samples;
+  }
+  function terrainSummary(points, samples, failed){
+    const endpointElevs = points.map(p => p.elevationFt).filter(Number.isFinite);
+    const sampleElevs = samples.map(p => p.elevationFt).filter(Number.isFinite);
+    const values = sampleElevs.length ? sampleElevs : endpointElevs;
+    const maxTerrainFt = values.length ? Math.max(...values) : NaN;
+    const minTerrainFt = values.length ? Math.min(...values) : NaN;
+    return {
+      maxTerrainFt,
+      minTerrainFt,
+      samples,
+      source:sampleElevs.length ? 'sampled 4 nm corridor' : (endpointElevs.length ? 'endpoint elevations only' : 'not available'),
+      failed:!!failed
+    };
+  }
+  function extractPreText(html){
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const pre = doc.querySelector('pre.glossaryProduct, pre');
+      if (pre) return pre.textContent || '';
+    } catch (_) {}
+    return String(html || '');
+  }
+  function decodeFdGroup(raw, level){
+    const s = String(raw || '').trim();
+    if (!s || !/^\d{4}[+-]?\d{0,2}$/.test(s)) return null;
+    const dd = Number(s.slice(0, 2));
+    const ff = Number(s.slice(2, 4));
+    if (!Number.isFinite(dd) || !Number.isFinite(ff)) return null;
+    let dir = null;
+    let speed = 0;
+    let variable = false;
+    if (dd === 99 && ff === 0) {
+      variable = true;
+    } else if (dd >= 51) {
+      dir = clamp360((dd - 50) * 10);
+      speed = ff + 100;
+    } else {
+      dir = dd === 0 ? 360 : dd * 10;
+      speed = ff;
+    }
+    const tempText = s.slice(4);
+    let temp = NaN;
+    if (tempText) {
+      if (tempText[0] === '+' || tempText[0] === '-') temp = Number(tempText);
+      else temp = -Math.abs(Number(tempText));
+    }
+    return { raw:s, dir, speed, temp, variable, level };
+  }
+  function parseFdProduct(html){
+    const text = extractPreText(html).replace(/\r/g, '');
+    const lines = text.split('\n').map(line => line.replace(/\s+$/g, ''));
+    const headerIndex = lines.findIndex(line => /^FT\s+/.test(line));
+    if (headerIndex < 0) throw new Error('FD table header not found');
+    const header = lines[headerIndex];
+    const levels = [...header.matchAll(/\d{4,5}/g)].map(match => Number(match[0])).filter(Number.isFinite);
+    const stations = {};
+    for (let i = headerIndex + 1; i < lines.length; i++) {
+      const line = lines[i];
+      const code = line.slice(0, 4).trim().toUpperCase();
+      if (!/^[A-Z0-9]{3,4}$/.test(code)) continue;
+      const entries = {};
+      levels.forEach((level, idx) => {
+        const raw = line.slice(9 + idx * 8, 9 + (idx + 1) * 8);
+        const decoded = decodeFdGroup(raw, level);
+        if (decoded) entries[level] = decoded;
+      });
+      if (Object.keys(entries).length) stations[code] = { code, entries };
+    }
+    const based = lines.find(line => /^DATA BASED ON\b/.test(line)) || '';
+    const valid = lines.find(line => /^VALID\b/.test(line)) || '';
+    const bulletin = lines.find(line => /^FB[A-Z0-9]{4}\s/.test(line)) || '';
+    return { text, levels, stations, based, valid, bulletin, fetchedAt:new Date() };
+  }
+  async function fetchFdProduct(){
+    if (fdCache && Date.now() - fdCache.fetchedAt.getTime() < 10 * 60 * 1000) return fdCache;
+    fdCache = parseFdProduct(await fetchText(FD1_URL));
+    return fdCache;
+  }
+  function windVector(wind){
+    if (!wind || !Number.isFinite(wind.speed) || !Number.isFinite(wind.dir) || wind.speed <= 0) return { x:0, y:0 };
+    const r = toRad(wind.dir);
+    return { x:Math.sin(r) * wind.speed, y:Math.cos(r) * wind.speed };
+  }
+  function windFromVector(x, y){
+    const speed = Math.hypot(x, y);
+    if (speed < 0.5) return { dir:null, speed:0, variable:true };
+    return { dir:clamp360(toDeg(Math.atan2(x, y))), speed, variable:false };
+  }
+  function interpolateFdWind(station, altitude){
+    const alt = Number(altitude);
+    if (!station || !Number.isFinite(alt)) return null;
+    const entries = Object.values(station.entries || {})
+      .filter(entry => entry && Number.isFinite(entry.level))
+      .sort((a, b) => a.level - b.level);
+    if (!entries.length) return null;
+    let lower = entries[0];
+    let upper = entries[entries.length - 1];
+    for (const entry of entries) {
+      if (entry.level <= alt) lower = entry;
+      if (entry.level >= alt) { upper = entry; break; }
+    }
+    if (alt <= entries[0].level) lower = upper = entries[0];
+    if (alt >= entries[entries.length - 1].level) lower = upper = entries[entries.length - 1];
+    const span = upper.level - lower.level;
+    const t = span > 0 ? (alt - lower.level) / span : 0;
+    const loVec = windVector(lower);
+    const hiVec = windVector(upper);
+    const wind = windFromVector(loVec.x + (hiVec.x - loVec.x) * t, loVec.y + (hiVec.y - loVec.y) * t);
+    const loTemp = Number.isFinite(lower.temp) ? lower.temp : NaN;
+    const hiTemp = Number.isFinite(upper.temp) ? upper.temp : NaN;
+    const temp = Number.isFinite(loTemp) && Number.isFinite(hiTemp)
+      ? loTemp + (hiTemp - loTemp) * t
+      : (Number.isFinite(loTemp) ? loTemp : hiTemp);
+    return { ...wind, temp, altitude:alt, lower:lower.level, upper:upper.level };
+  }
+  function routeBounds(points, marginDeg = 3){
+    const lats = points.map(p => p.lat).filter(Number.isFinite);
+    const lons = points.map(p => p.lon).filter(Number.isFinite);
+    return {
+      xmin:Math.max(-180, Math.min(...lons) - marginDeg),
+      ymin:Math.max(-90, Math.min(...lats) - marginDeg),
+      xmax:Math.min(180, Math.max(...lons) + marginDeg),
+      ymax:Math.min(90, Math.max(...lats) + marginDeg)
+    };
+  }
+  async function fetchFdStationCoordsForRoute(plan, fd){
+    const bounds = routeBounds(plan.points);
+    const params = new URLSearchParams({
+      f:'json',
+      where:'1=1',
+      geometry:`${bounds.xmin},${bounds.ymin},${bounds.xmax},${bounds.ymax}`,
+      geometryType:'esriGeometryEnvelope',
+      inSR:'4326',
+      spatialRel:'esriSpatialRelIntersects',
+      outFields:'ARPT_ID,ARPT_NAME,LAT1_DECIMAL,LONG1_DECIMAL,LAT2_DECIMAL,LONG2_DECIMAL',
+      returnGeometry:'false',
+      resultRecordCount:'2000'
+    });
+    const data = await fetchJson(`${RUNWAY_URL}?${params.toString()}`);
+    const byCode = new Map();
+    (data.features || []).forEach(feature => {
+      const a = feature.attributes || {};
+      const code = String(a.ARPT_ID || '').trim().toUpperCase();
+      if (!fd.stations[code]) return;
+      const points = [
+        { lat:Number(a.LAT1_DECIMAL), lon:Number(a.LONG1_DECIMAL) },
+        { lat:Number(a.LAT2_DECIMAL), lon:Number(a.LONG2_DECIMAL) }
+      ].filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
+      if (!points.length) return;
+      if (!byCode.has(code)) byCode.set(code, { code, name:a.ARPT_NAME || '', coords:[] });
+      byCode.get(code).coords.push(...points);
+    });
+    plan.points.forEach(point => {
+      const code = String(point.faa || '').toUpperCase();
+      if (fd.stations[code] && Number.isFinite(point.lat) && Number.isFinite(point.lon)) {
+        if (!byCode.has(code)) byCode.set(code, { code, name:point.name || '', coords:[] });
+        byCode.get(code).coords.push({ lat:point.lat, lon:point.lon });
+      }
+    });
+    return [...byCode.values()].map(item => {
+      const cached = fdStationCoordCache.get(item.code);
+      if (cached) return cached;
+      const lat = item.coords.reduce((sum, p) => sum + p.lat, 0) / item.coords.length;
+      const lon = item.coords.reduce((sum, p) => sum + p.lon, 0) / item.coords.length;
+      const station = { code:item.code, name:item.name, lat, lon, entries:fd.stations[item.code].entries };
+      fdStationCoordCache.set(item.code, station);
+      return station;
+    });
+  }
+  function nearestFdStation(leg, stations){
+    if (!stations.length) return null;
+    const mid = intermediatePoint(leg.from, leg.to, 0.5);
+    return stations.reduce((best, station) => {
+      const d = distanceNm(mid, station);
+      return !best || d < best.distanceNm ? { ...station, distanceNm:d } : best;
+    }, null);
+  }
+  function windComponentsForCourse(wind, course){
+    if (!wind || !Number.isFinite(wind.speed)) return { headwind:NaN, crosswind:NaN };
+    if (!Number.isFinite(wind.dir)) return wind.speed <= 0.5 ? { headwind:0, crosswind:0 } : { headwind:NaN, crosswind:NaN };
+    const rel = toRad(clamp360(wind.dir - course));
+    return {
+      headwind:wind.speed * Math.cos(rel),
+      crosswind:wind.speed * Math.sin(rel)
+    };
+  }
+  function componentText(value, posLabel, negLabel){
+    if (!Number.isFinite(value)) return '-';
+    if (Math.abs(value) < 0.5) return '0 kt';
+    return `${value >= 0 ? posLabel : negLabel} ${fmt(Math.abs(value), 0)} kt`;
+  }
+  function windText(wind){
+    if (!wind) return '-';
+    if (wind.variable || !Number.isFinite(wind.dir)) return `L/V ${fmt(wind.speed, 0)} kt`;
+    return `${pad3(wind.dir)} deg / ${fmt(wind.speed, 0)} kt`;
+  }
+  function renderWindPresets(rows){
+    const usable = rows.filter(row => row.wind && Number.isFinite(row.wind.speed)).slice(0, 6);
+    const render = (target, type) => {
+      if (!target) return;
+      target.innerHTML = '';
+      usable.forEach((row, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'fp-preset';
+        btn.textContent = type === 'dir'
+          ? `${idx + 1}: ${Number.isFinite(row.wind.dir) ? pad3(row.wind.dir) + ' deg' : 'L/V'}`
+          : `${idx + 1}: ${fmt(row.wind.speed, 0)} kt`;
+        btn.title = `${row.from.label} to ${row.to.label}`;
+        btn.addEventListener('click', () => {
+          if (Number.isFinite(row.wind.dir)) setRawInput(els.windFrom, Math.round(row.wind.dir));
+          setRawInput(els.windSpeed, Math.round(row.wind.speed));
+          if (Number.isFinite(row.wind.temp)) setRawInput(els.oat, Math.round(row.wind.temp));
+          saveForm();
+        });
+        target.appendChild(btn);
+      });
+    };
+    render(els.windFromPresets, 'dir');
+    render(els.windSpeedPresets, 'spd');
+  }
+  function renderWindsTable(plan, fd){
+    if (!els.windsBody) return;
+    const rows = plan.winds || [];
+    if (!rows.length) {
+      els.windsBody.innerHTML = '<tr><td colspan="8">No winds aloft data available for this route.</td></tr>';
+      renderWindPresets([]);
+      return;
+    }
+    els.windsBody.innerHTML = rows.map(row => {
+      const leg = `${escapeHtml(row.from.label)}-${escapeHtml(row.to.label)}`;
+      const station = row.station ? `${escapeHtml(row.station.code)} (${fmt(row.station.distanceNm, 0)} nm)` : '-';
+      const gs = Number.isFinite(row.gs) ? `${fmt(row.gs, 0)} kt` : '-';
+      return `<tr>
+        <td>${leg}</td>
+        <td>${station}</td>
+        <td>${pad3(row.leg.course)} deg</td>
+        <td>${escapeHtml(windText(row.wind))}</td>
+        <td>${Number.isFinite(row.wind?.temp) ? fmt(row.wind.temp, 0) + ' C' : '-'}</td>
+        <td>${componentText(row.headwind, 'H', 'T')}</td>
+        <td>${componentText(row.crosswind, 'R', 'L')}</td>
+        <td>${gs}</td>
+      </tr>`;
+    }).join('');
+    if (els.windsAge) {
+      const valid = fd?.valid ? fd.valid.replace(/\s+/g, ' ').trim() : 'FD1 forecast';
+      els.windsAge.textContent = valid || 'FD1 forecast';
+    }
+    if (els.windsNote) {
+      els.windsNote.textContent = 'Interpolated from the nearest matched FD station around each leg midpoint. Winds are true; headwind is H, tailwind is T, crosswind R/L is from right/left.';
+    }
+    renderWindPresets(rows);
+  }
+  async function updateWindsAloft(plan){
+    const requestId = ++windSeq;
+    window.clearTimeout(windRefreshTimer);
+    if (!plan || !plan.legs?.length) return;
+    if (els.windsBody) els.windsBody.innerHTML = '<tr><td colspan="8">Loading winds aloft...</td></tr>';
+    if (els.windsAge) els.windsAge.textContent = '-';
+    try {
+      const fd = await fetchFdProduct();
+      const stations = await fetchFdStationCoordsForRoute(plan, fd);
+      if (requestId !== windSeq) return;
+      const altitude = Number.isFinite(plan.cruiseAlt) ? plan.cruiseAlt : plan.recommendation.altitude;
+      const tas = num(els.tas?.value);
+      plan.winds = plan.legs.map(leg => {
+        const station = nearestFdStation(leg, stations);
+        const wind = station ? interpolateFdWind(station, altitude) : null;
+        const components = windComponentsForCourse(wind, leg.course);
+        return {
+          leg,
+          from:leg.from,
+          to:leg.to,
+          station,
+          wind,
+          ...components,
+          gs:wind && Number.isFinite(tas) ? groundSpeed(tas, leg.course, wind.dir, wind.speed) : NaN
+        };
+      });
+      renderWindsTable(plan, fd);
+    } catch (err) {
+      console.warn(err);
+      if (requestId !== windSeq) return;
+      plan.winds = [];
+      if (els.windsBody) els.windsBody.innerHTML = '<tr><td colspan="8">Winds aloft could not be loaded from the NWS FD product.</td></tr>';
+      if (els.windsAge) els.windsAge.textContent = '-';
+      if (els.windsNote) els.windsNote.textContent = 'The official AWC API blocks browser CORS; this static app uses the browser-readable NWS FD1 text product when available.';
+      renderWindPresets([]);
+    }
+  }
+  function scheduleWindsUpdate(delay = 250){
+    window.clearTimeout(windRefreshTimer);
+    if (!lastPlan) return;
+    windRefreshTimer = window.setTimeout(() => updateWindsAloft(lastPlan), delay);
+  }
+  function isEastbound(course){
+    const c = clamp360(course);
+    return c >= 0 && c < 180;
+  }
+  function altitudeMatchesRule(alt, rules, course){
+    if (!Number.isFinite(alt)) return false;
+    const rounded = Math.round(alt / 100) * 100;
+    const east = isEastbound(course);
+    if (rules === 'ifr') {
+      if (rounded % 1000 !== 0) return false;
+      const thousands = Math.round(rounded / 1000);
+      return east ? thousands % 2 === 1 : thousands % 2 === 0;
+    }
+    if ((rounded - 500) % 1000 !== 0) return false;
+    const thousands = Math.round((rounded - 500) / 1000);
+    return east ? thousands % 2 === 1 : thousands % 2 === 0;
+  }
+  function legalAltitudeCandidates(rules, course){
+    const out = [];
+    for (let alt = rules === 'ifr' ? 3000 : 3500; alt <= 17500; alt += 500) {
+      if (altitudeMatchesRule(alt, rules, course)) out.push(alt);
+    }
+    return out;
+  }
+  function recommendAltitude(rules, course, terrain){
+    const buffer = rules === 'ifr' ? 2000 : 1500;
+    const floor = Number.isFinite(terrain.maxTerrainFt) ? terrain.maxTerrainFt + buffer : (rules === 'ifr' ? 3000 : 3500);
+    const candidates = legalAltitudeCandidates(rules, course);
+    const altitude = candidates.find(alt => alt >= floor);
+    const direction = isEastbound(course) ? 'eastbound' : 'westbound';
+    return {
+      altitude:altitude || NaN,
+      floor,
+      buffer,
+      direction,
+      ruleText:`${rules.toUpperCase()} ${direction} hemispheric-rule altitude, true-course approximation`
+    };
+  }
+  function requestedAltitudeText(alt, rules, course, floor){
+    if (!Number.isFinite(alt)) return '';
+    const pieces = [`Requested ${fmt(alt)} ft`];
+    pieces.push(altitudeMatchesRule(alt, rules, course) ? 'matches the selected altitude rule' : 'does not match the selected altitude rule');
+    if (Number.isFinite(floor)) pieces.push(alt >= floor ? 'above sampled terrain buffer' : 'below sampled terrain buffer');
+    return pieces.join('; ') + '.';
+  }
+  function initMap(){
+    if (map || !els.map || !window.L) return;
+    map = L.map(els.map, { zoomControl:true, attributionControl:true });
+    const tiles = L.tileLayer(SECTIONAL_TILE, {
+      attribution:'FAA VFR Sectional',
+      minZoom:4,
+      maxZoom:13,
+      minNativeZoom:8,
+      maxNativeZoom:12
+    });
+    tiles.on('tileerror', () => {
+      if (!tileErrorShown) {
+        tileErrorShown = true;
+        setStatus('Route built. Sectional tiles did not load for at least one map tile.');
+      }
+    });
+    tiles.addTo(map);
+    map.setView([39.5, -98.35], 5);
+  }
+  function clearMap(){
+    if (!map) return;
+    mapLayers.forEach(layer => layer.remove());
+    mapLayers = [];
+    legLabelLayers.forEach(item => item.layer.remove());
+    legLabelLayers = [];
+  }
+  function legLabelText(leg){
+    return `${fmt(leg.distNm, 1)} nm / ${pad3(leg.course)} deg`;
+  }
+  function updateLegLabelVisibility(){
+    if (!map || !legLabelLayers.length) return;
+    const zoom = map.getZoom();
+    const maxVisible = zoom < 7 ? 0 : zoom < 8 ? 2 : zoom < 9 ? 4 : zoom < 10 ? 7 : 999;
+    const minGap = zoom < 8 ? 130 : zoom < 9 ? 108 : zoom < 10 ? 82 : 56;
+    const minLegPx = zoom < 8 ? 110 : zoom < 9 ? 86 : zoom < 10 ? 58 : 34;
+    const placed = [];
+    let shown = 0;
+    const byPriority = [...legLabelLayers].sort((a, b) => b.leg.distNm - a.leg.distNm);
+    byPriority.forEach(item => {
+      const mid = map.latLngToContainerPoint(item.latLng);
+      const start = map.latLngToContainerPoint([item.leg.from.lat, item.leg.from.lon]);
+      const end = map.latLngToContainerPoint([item.leg.to.lat, item.leg.to.lon]);
+      const legPx = Math.hypot(start.x - end.x, start.y - end.y);
+      const close = placed.some(p => Math.hypot(p.x - mid.x, p.y - mid.y) < minGap);
+      const visible = shown < maxVisible && legPx >= minLegPx && !close;
+      if (visible) {
+        placed.push(mid);
+        shown += 1;
+        if (!map.hasLayer(item.layer)) item.layer.addTo(map);
+      } else if (map.hasLayer(item.layer)) {
+        item.layer.remove();
+      }
+    });
+  }
+  function renderMap(plan){
+    initMap();
+    if (!map) {
+      setStatus('Route built. Map library is not available while offline.');
+      return;
+    }
+    clearMap();
+    const latLngs = plan.points.map(p => [p.lat, p.lon]);
+    const line = L.polyline(latLngs, { color:'#007aff', weight:4, opacity:.92 }).addTo(map);
+    mapLayers.push(line);
+    plan.points.forEach((point, index) => {
+      const marker = L.marker([point.lat, point.lon]).addTo(map);
+      marker.bindPopup(`<strong>${escapeHtml(point.label)}</strong><br>${escapeHtml(point.name || point.source || '')}`);
+      mapLayers.push(marker);
+      const label = L.tooltip({ permanent:true, direction:'top', offset:[0, -12], opacity:.9 })
+        .setContent(`${index + 1}. ${escapeHtml(point.label)}`)
+        .setLatLng([point.lat, point.lon])
+        .addTo(map);
+      mapLayers.push(label);
+    });
+    plan.legs.forEach(leg => {
+      const mid = intermediatePoint(leg.from, leg.to, 0.5);
+      const layer = L.tooltip({
+        permanent:true,
+        direction:'center',
+        className:'fp-leg-label',
+        opacity:.96
+      })
+        .setContent(escapeHtml(legLabelText(leg)))
+        .setLatLng([mid.lat, mid.lon]);
+      legLabelLayers.push({ layer, leg, latLng:[mid.lat, mid.lon] });
+    });
+    if (!map._fpLegLabelsBound) {
+      map.on('zoomend moveend', updateLegLabelVisibility);
+      map._fpLegLabelsBound = true;
+    }
+    map.fitBounds(line.getBounds().pad(.24), { maxZoom:10 });
+    setTimeout(() => {
+      map.invalidateSize();
+      updateLegLabelVisibility();
+    }, 60);
+  }
+  function profileTerrainPath(plan, xFor, yFor, baseY){
+    const center = plan.terrain.samples
+      .filter(sample => sample.side === 'center' && Number.isFinite(sample.elevationFt))
+      .sort((a, b) => a.routeNm - b.routeNm);
+    if (!center.length) return '';
+    const points = center.map(sample => `${xFor(sample.routeNm).toFixed(1)},${yFor(sample.elevationFt).toFixed(1)}`);
+    return `M${points.join(' L')} L${xFor(plan.totalNm).toFixed(1)},${baseY} L${xFor(0).toFixed(1)},${baseY} Z`;
+  }
+  function renderProfile(plan){
+    const svg = els.profile;
+    if (!svg) return;
+    const w = 900, h = 190, left = 58, right = 22, top = 18, bottom = 34;
+    const plotW = w - left - right;
+    const plotH = h - top - bottom;
+    const cruise = Number.isFinite(plan.cruiseAlt) ? plan.cruiseAlt : plan.recommendation.altitude;
+    const terrainMax = Number.isFinite(plan.terrain.maxTerrainFt) ? plan.terrain.maxTerrainFt : 0;
+    const maxAlt = Math.max(1000, cruise || 0, terrainMax + 800);
+    const xFor = nm => left + (plan.totalNm > 0 ? nm / plan.totalNm : 0) * plotW;
+    const yFor = alt => top + (1 - Math.max(0, Math.min(1, alt / maxAlt))) * plotH;
+    const cruiseY = yFor(Number.isFinite(cruise) ? cruise : 0);
+    const terrainPath = profileTerrainPath(plan, xFor, yFor, top + plotH);
+    const pointMarkers = [];
+    let cum = 0;
+    plan.points.forEach((point, i) => {
+      if (i > 0) cum += plan.legs[i - 1].distNm;
+      const x = xFor(cum);
+      const elev = Number.isFinite(point.elevationFt) ? point.elevationFt : 0;
+      pointMarkers.push(`
+        <circle cx="${x.toFixed(1)}" cy="${yFor(elev).toFixed(1)}" r="5" fill="var(--accent)"></circle>
+        <text x="${x.toFixed(1)}" y="${h - 12}" text-anchor="middle" font-size="12" fill="currentColor">${escapeHtml(point.label)}</text>
+      `);
+    });
+    svg.innerHTML = `
+      <rect x="0" y="0" width="${w}" height="${h}" fill="transparent"></rect>
+      <line x1="${left}" y1="${top + plotH}" x2="${w - right}" y2="${top + plotH}" stroke="currentColor" stroke-opacity=".22"></line>
+      <line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotH}" stroke="currentColor" stroke-opacity=".22"></line>
+      <text x="12" y="${top + 4}" font-size="12" fill="currentColor">${fmt(maxAlt)} ft</text>
+      <text x="16" y="${top + plotH}" font-size="12" fill="currentColor">0 ft</text>
+      ${terrainPath ? `<path d="${terrainPath}" fill="rgba(52,199,89,.24)" stroke="#34c759" stroke-width="2"></path>` : `<text x="${left + 10}" y="${top + plotH / 2}" font-size="13" fill="currentColor">Terrain sample not available</text>`}
+      ${Number.isFinite(cruise) ? `<line x1="${left}" y1="${cruiseY.toFixed(1)}" x2="${w - right}" y2="${cruiseY.toFixed(1)}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="8 6"></line><text x="${w - right - 4}" y="${Math.max(14, cruiseY - 6).toFixed(1)}" text-anchor="end" font-size="12" fill="currentColor">Cruise ${fmt(cruise)} ft</text>` : ''}
+      ${pointMarkers.join('')}
+    `;
+  }
+  function renderRouteList(plan){
+    if (!els.list) return;
+    els.list.innerHTML = plan.points.map((point, index) => {
+      const elev = Number.isFinite(point.elevationFt) ? `${fmt(point.elevationFt)} ft` : point.source;
+      return `<span class="fp-chip"><strong>${index + 1}</strong> ${escapeHtml(point.label)} <span>${escapeHtml(elev)}</span></span>`;
+    }).join('');
+  }
+  function updateSummary(plan, unresolved = [], options = {}){
+    const rec = plan.recommendation;
+    const requested = requestedAltitudeText(plan.requestedAlt, plan.rules, plan.course, rec.floor);
+    const presetText = Number.isFinite(rec.altitude) ? `${fmt(rec.altitude)} ft` : '-';
+    setText(els.useRec, presetText);
+    els.useRec?.setAttribute('aria-label', Number.isFinite(rec.altitude) ? `Use recommended cruise altitude ${presetText}` : 'No recommended cruise altitude available');
+    const recText = Number.isFinite(rec.altitude)
+      ? `${fmt(rec.altitude)} ft. ${rec.ruleText}.`
+      : `No candidate below 17,500 ft. ${rec.ruleText}.`;
+    setText(els.recommended, `${recText}${requested ? ' ' + requested : ''}`);
+    const terrainText = Number.isFinite(plan.terrain.maxTerrainFt)
+      ? `Max ${fmt(plan.terrain.maxTerrainFt)} ft, ${plan.terrain.source}, +${fmt(rec.buffer)} ft buffer`
+      : 'Terrain sample unavailable';
+    setText(els.terrain, terrainText);
+    const unresolvedText = unresolved.length ? ` Unresolved points: ${unresolved.join(', ')}.` : '';
+    if (options.status !== false) setStatus(options.status || `Route built.${unresolvedText}`);
+  }
+  function refreshPlanFromControls(options = {}){
+    if (!lastPlan) return false;
+    const rules = els.rules?.value === 'ifr' ? 'ifr' : 'vfr';
+    const recommendation = recommendAltitude(rules, lastPlan.course, lastPlan.terrain);
+    const requestedAlt = num(els.cruise?.value);
+    lastPlan.rules = rules;
+    lastPlan.recommendation = recommendation;
+    lastPlan.requestedAlt = requestedAlt;
+    lastPlan.cruiseAlt = Number.isFinite(requestedAlt) ? requestedAlt : recommendation.altitude;
+    renderProfile(lastPlan);
+    updateSummary(lastPlan, lastUnresolved, options);
+    scheduleWindsUpdate(250);
+    return true;
+  }
+  function canAutoBuild(){
+    const dep = normalizeAirportCode(els.dep?.value);
+    const dest = normalizeAirportCode(els.dest?.value);
+    return dep.length >= 3 && dest.length >= 3;
+  }
+  function scheduleAutoBuild(delay = 650){
+    saveForm();
+    window.clearTimeout(autoBuildTimer);
+    if (els.modal.classList.contains('hidden')) return;
+    if (!canAutoBuild()) {
+      setText(els.useRec, '-');
+      els.useRec?.setAttribute('aria-label', 'No recommended cruise altitude available');
+      setStatus('Enter a departure and destination to build a profile.');
+      return;
+    }
+    autoBuildTimer = window.setTimeout(() => buildProfile({ auto:true }), delay);
+  }
+  function setField(id, value){
+    const el = document.getElementById(id);
+    if (!el || value === '' || value == null || !Number.isFinite(Number(value))) return;
+    el.value = String(Number(value.toFixed ? value.toFixed(1) : value));
+    el.dispatchEvent(new Event('input', { bubbles:true }));
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+  function setRawField(id, value){
+    const el = document.getElementById(id);
+    if (!el || value === '' || value == null) return;
+    el.value = String(value);
+    el.dispatchEvent(new Event('input', { bubbles:true }));
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+  function setRawInput(el, value){
+    if (!el || value === '' || value == null) return;
+    el.value = String(value);
+    el.dispatchEvent(new Event('input', { bubbles:true }));
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+  function groundSpeed(tas, course, windFrom, windSpeed){
+    if (![tas, course, windFrom, windSpeed].every(Number.isFinite) || tas <= 0) return NaN;
+    const rel = toRad(clamp360(windFrom - course));
+    const headwind = windSpeed * Math.cos(rel);
+    const crosswind = windSpeed * Math.sin(rel);
+    const underRoot = tas * tas - crosswind * crosswind;
+    if (underRoot < 0) return NaN;
+    return Math.sqrt(underRoot) - headwind;
+  }
+  function applyPlanToCalculators(plan){
+    const cruise = Number.isFinite(plan.cruiseAlt) ? plan.cruiseAlt : plan.recommendation.altitude;
+    const depElev = Number.isFinite(plan.points[0]?.elevationFt) ? Math.round(plan.points[0].elevationFt) : NaN;
+    const lastPoint = plan.points[plan.points.length - 1];
+    const destElev = Number.isFinite(lastPoint?.elevationFt) ? Math.round(lastPoint.elevationFt) : NaN;
+    const course = Math.round(plan.course);
+    const distance = Number(plan.totalNm.toFixed(1));
+    const tas = num(els.tas?.value);
+    const windFrom = num(els.windFrom?.value);
+    const windSpeed = num(els.windSpeed?.value);
+    const oat = num(els.oat?.value);
+    const gs = groundSpeed(tas, plan.course, windFrom, windSpeed);
+
+    setField('D_nm', distance);
+    setField('SDT_d', distance);
+    setField('tod_toDest', distance);
+    setField('S60_dist', distance);
+    setField('S60_course', course);
+    setField('TC_out', course);
+    setField('W_COURSE', course);
+    setField('FPM_H_TC', course);
+
+    if (Number.isFinite(cruise)) {
+      setField('toc_cruiseAlt', Math.round(cruise));
+      setField('F_ELEV_CR', Math.round(cruise));
+      setField('SSA_pa', Math.round(cruise));
+    }
+    if (Number.isFinite(depElev)) {
+      setField('toc_curAlt', depElev);
+      setField('F_ELEV', depElev);
+      setField('A_FLD', depElev);
+      setField('A_IND', depElev);
+      setField('CL_FLD_FT', depElev);
+      setField('PA_GROUND_MSL', depElev);
+    }
+    if (Number.isFinite(destElev)) setField('tod_destAlt', destElev);
+    if (Number.isFinite(tas)) {
+      setField('TAS_helper', tas);
+      setField('W_TAS', tas);
+      setField('FPM_H_TAS', tas);
+      setField('M_TAS_A', tas);
+      setField('M_TAS_B', tas);
+      setField('VT_TAS_B', tas);
+    }
+    if (Number.isFinite(gs)) {
+      setField('toc_gs', Math.round(gs));
+      setField('SDT_v', Math.round(gs));
+      setField('S60_gs', Math.round(gs));
+      setField('PA_GS', Math.round(gs));
+    }
+    if (Number.isFinite(windFrom) && Number.isFinite(windSpeed)) {
+      setField('WindFrom', Math.round(windFrom));
+      setField('WindSpeed', Math.round(windSpeed));
+      setField('W_WINDDIR', Math.round(windFrom));
+      setField('W_WINDSPEED', Math.round(windSpeed));
+      setField('FPM_H_WDIR', Math.round(windFrom));
+      setField('FPM_H_WSPD', Math.round(windSpeed));
+      setField('PA_WIND_FROM', Math.round(windFrom));
+      setField('PA_W', Math.round(windSpeed));
+      setRawField('WIND_AT', `${pad3(windFrom)}@${Math.round(windSpeed)}`);
+    }
+    if (Number.isFinite(oat)) {
+      setField('F_OAT_CR', Math.round(oat));
+      setField('oatc', Math.round(oat));
+      setField('SSA_oat', Math.round(oat));
+    }
+    setStatus('Applied route, cruise, wind/temp, terrain endpoints, and distance to the matching calculators.');
+  }
+  function collectForm(){
+    return {
+      dep:els.dep?.value || '',
+      dest:els.dest?.value || '',
+      route:els.route?.value || '',
+      rules:els.rules?.value || 'vfr',
+      cruise:els.cruise?.value || '',
+      tas:els.tas?.value || '',
+      windFrom:els.windFrom?.value || '',
+      windSpeed:els.windSpeed?.value || '',
+      oat:els.oat?.value || ''
+    };
+  }
+  function saveForm(){
+    try { localStorage.setItem(KEY, JSON.stringify(collectForm())); } catch (_) {}
+  }
+  function loadForm(){
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+      const defaults = {
+        dep:'', dest:'', route:'', rules:'vfr', cruise:'',
+        tas:'', windFrom:'', windSpeed:'', oat:''
+      };
+      Object.entries({
+        dep:els.dep, dest:els.dest, route:els.route, rules:els.rules, cruise:els.cruise,
+        tas:els.tas, windFrom:els.windFrom, windSpeed:els.windSpeed, oat:els.oat
+      }).forEach(([key, el]) => {
+        if (el) el.value = saved[key] != null ? saved[key] : defaults[key];
+      });
+    } catch (_) {}
+  }
+  function restoreProfileForm(){
+    loadForm();
+    if (!els.dep?.value) {
+      const wxAirport = document.getElementById('WX_AIRPORT')?.value;
+      if (wxAirport) els.dep.value = wxAirport;
+    }
+  }
+  async function buildProfile(options = {}){
+    const requestId = ++buildSeq;
+    window.clearTimeout(autoBuildTimer);
+    const dep = normalizeAirportCode(els.dep?.value);
+    const dest = normalizeAirportCode(els.dest?.value);
+    if (!dep || !dest) {
+      setStatus('Departure and destination airports are required.');
+      return;
+    }
+    saveForm();
+    setBusy(true);
+    setStatus(options.auto ? 'Updating route...' : 'Resolving route points...');
+    try {
+      const middle = parseRouteTokens(els.route?.value);
+      const tokens = [dep, ...middle, dest];
+      const resolved = await Promise.all(tokens.map((token, index) =>
+        resolvePoint(token, index).then(point => ({ token, point })).catch(() => ({ token, point:null }))
+      ));
+      if (requestId !== buildSeq) return;
+      const points = resolved.filter(item => item.point).map(item => item.point);
+      const unresolved = resolved.filter(item => !item.point).map(item => item.token);
+      if (points.length < 2) throw new Error('Not enough resolved points');
+      const route = buildLegs(points);
+      setStatus('Sampling terrain around a 4 nm route corridor...');
+      const samples = buildTerrainSamples(points, route.legs);
+      let terrainFailed = false;
+      try {
+        await sampleElevations(samples);
+        points.forEach(point => {
+          if (!Number.isFinite(point.elevationFt)) {
+            const nearest = samples.reduce((best, sample) => {
+              if (!Number.isFinite(sample.elevationFt)) return best;
+              const d = distanceNm(point, sample);
+              return !best || d < best.d ? { d, elevationFt:sample.elevationFt } : best;
+            }, null);
+            if (nearest) point.elevationFt = nearest.elevationFt;
+          }
+        });
+      } catch (err) {
+        console.warn(err);
+        terrainFailed = true;
+      }
+      if (requestId !== buildSeq) return;
+      const terrain = terrainSummary(points, samples, terrainFailed);
+      const course = bearingDeg(points[0], points[points.length - 1]);
+      const rules = els.rules?.value === 'ifr' ? 'ifr' : 'vfr';
+      const recommendation = recommendAltitude(rules, course, terrain);
+      const requestedAlt = num(els.cruise?.value);
+      const cruiseAlt = Number.isFinite(requestedAlt) ? requestedAlt : recommendation.altitude;
+      lastPlan = {
+        points,
+        legs:route.legs,
+        totalNm:route.totalNm,
+        course,
+        rules,
+        requestedAlt,
+        cruiseAlt,
+        recommendation,
+        terrain
+      };
+      lastUnresolved = unresolved;
+      renderMap(lastPlan);
+      renderProfile(lastPlan);
+      renderRouteList(lastPlan);
+      const unresolvedText = unresolved.length ? ` Unresolved points: ${unresolved.join(', ')}.` : '';
+      updateSummary(lastPlan, unresolved, { status:`${options.auto ? 'Route updated' : 'Route built'}.${unresolvedText}` });
+      updateWindsAloft(lastPlan);
+    } catch (err) {
+      console.error(err);
+      if (requestId === buildSeq) setStatus('Could not build that profile. Check the route entries and connection.');
+    } finally {
+      if (requestId === buildSeq) setBusy(false);
+    }
+  }
+  function useRecommended(){
+    if (!lastPlan || !Number.isFinite(lastPlan.recommendation.altitude)) {
+      setStatus('Enter a route first so I can recommend an altitude.');
+      return;
+    }
+    els.cruise.value = String(Math.round(lastPlan.recommendation.altitude));
+    saveForm();
+    refreshPlanFromControls({ status:'Cruise altitude set to recommended.' });
+  }
+  function openModal(){
+    restoreProfileForm();
+    els.modal.classList.remove('hidden');
+    els.modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('fp-modal-open');
+    initMap();
+    setTimeout(() => {
+      restoreProfileForm();
+      map?.invalidateSize();
+      (els.dep?.value ? els.dest : els.dep)?.focus();
+      if (canAutoBuild() && !lastPlan) scheduleAutoBuild(250);
+    }, 80);
+  }
+  function closeModal(){
+    window.clearTimeout(autoBuildTimer);
+    els.modal.classList.add('hidden');
+    els.modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('fp-modal-open');
+    saveForm();
+    els.open?.focus();
+  }
+
+  loadForm();
+  els.open.addEventListener('click', openModal);
+  els.close?.addEventListener('click', closeModal);
+  els.modal.addEventListener('click', e => { if (e.target === els.modal) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !els.modal.classList.contains('hidden')) closeModal();
+  });
+  [els.dep, els.dest].forEach(el => {
+    el?.addEventListener('input', () => {
+      el.value = el.value.toUpperCase();
+      scheduleAutoBuild();
+    });
+    el?.addEventListener('keydown', e => { if (e.key === 'Enter') buildProfile(); });
+  });
+  els.route?.addEventListener('input', () => scheduleAutoBuild());
+  els.route?.addEventListener('change', () => scheduleAutoBuild(150));
+  els.rules?.addEventListener('change', () => {
+    saveForm();
+    if (!refreshPlanFromControls({ status:'Recommendation updated.' })) scheduleAutoBuild(150);
+  });
+  els.cruise?.addEventListener('input', () => {
+    saveForm();
+    refreshPlanFromControls({ status:false });
+  });
+  els.tas?.addEventListener('input', () => {
+    saveForm();
+    scheduleWindsUpdate(250);
+  });
+  els.tas?.addEventListener('change', () => {
+    saveForm();
+    scheduleWindsUpdate(100);
+  });
+  [els.windFrom, els.windSpeed, els.oat].forEach(el => {
+    el?.addEventListener('input', saveForm);
+    el?.addEventListener('change', saveForm);
+  });
+  els.useRec?.addEventListener('click', useRecommended);
+  els.info?.addEventListener('click', () => {
+    const nextOpen = els.infoPanel?.classList.contains('hidden');
+    els.infoPanel?.classList.toggle('hidden', !nextOpen);
+    els.info?.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+  });
+  els.apply?.addEventListener('click', () => {
+    if (!lastPlan) {
+      setStatus('Build a route first, then apply it to the calculators.');
+      return;
+    }
+    applyPlanToCalculators(lastPlan);
+  });
+})();
+</script>
+
+<script>
+(function(){
+  const WX_KEY = 'aviationWxContext';
+  const RUNWAY_URL = 'https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Runways_View/FeatureServer/0/query';
+  const els = {
+    airport: document.getElementById('WX_AIRPORT'),
+    runway: document.getElementById('WX_RUNWAY'),
+    load: document.getElementById('WX_LOAD'),
+    current: document.getElementById('WX_CURRENT'),
+    refresh: document.getElementById('WX_REFRESH'),
+    summary: document.getElementById('WX_SUMMARY'),
+    age: document.getElementById('WX_AGE')
+  };
+  const state = {
+    airportInput: '',
+    icao: '',
+    faa: '',
+    stationName: '',
+    weather: null,
+    runways: [],
+    selectedRunwayValue: '',
+    fetchedAt: null
+  };
+
+  function setStatus(summary, age){
+    if (els.summary) els.summary.textContent = summary || 'No airport loaded.';
+    if (els.age && age !== undefined) {
+      els.age.textContent = age || 'Report age: -';
+      els.age.style.removeProperty('--wx-age-color');
+    }
+  }
+  function setBusy(on){
+    [els.load, els.current, els.refresh].forEach(btn => {
+      if (btn) btn.disabled = !!on;
+    });
+  }
+  function normalizeAirportCode(raw){
+    return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  }
+  function splitAirportCode(raw){
+    const code = normalizeAirportCode(raw);
+    if (!code) return { icao:'', faa:'' };
+    if (code.length === 3) return { icao:'K' + code, faa:code };
+    if (code.length === 4 && code[0] === 'K') return { icao:code, faa:code.slice(1) };
+    return { icao:code, faa:code.length > 3 ? code.slice(-3) : code };
+  }
+  function asNumber(v){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : NaN;
+  }
+  function round(v, dp=0){
+    if (!Number.isFinite(v)) return '';
+    return Number(v.toFixed(dp)).toString();
+  }
+  function metersToFeet(m){ return asNumber(m) * 3.280839895; }
+  function kmhToKt(kmh){ return asNumber(kmh) / 1.852; }
+  function paToInHg(pa){ return asNumber(pa) / 3386.389; }
+  function pad3(n){
+    if (!Number.isFinite(n)) return '';
+    const x = Math.round(((n % 360) + 360) % 360);
+    return String(x === 0 ? 360 : x).padStart(3, '0');
+  }
+  function ageMinutes(d){
+    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return NaN;
+    return Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+  }
+  function ageTextFromMinutes(minutes){
+    if (!Number.isFinite(minutes)) return 'unknown';
+    if (minutes < 60) return `${minutes} min`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  }
+  function ageText(d){
+    return ageTextFromMinutes(ageMinutes(d));
+  }
+  function ageColor(minutes){
+    if (!Number.isFinite(minutes)) return '';
+    const t = Math.min(60, Math.max(0, minutes)) / 60;
+    const hue = Math.round(120 * (1 - t)); // 0 min green, 30 min yellow, 60+ min red
+    return `hsl(${hue} 78% 42%)`;
+  }
+  function setReportAge(d){
+    if (!els.age) return;
+    const minutes = ageMinutes(d);
+    els.age.textContent = 'Report age: ';
+    const value = document.createElement('span');
+    value.className = 'wx-age-value';
+    value.textContent = ageTextFromMinutes(minutes);
+    const color = ageColor(minutes);
+    if (color) els.age.style.setProperty('--wx-age-color', color);
+    else els.age.style.removeProperty('--wx-age-color');
+    els.age.appendChild(value);
+  }
+  function fetchJson(url){
+    return fetch(url, { headers:{ Accept:'application/geo+json, application/json' } }).then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    });
+  }
+  function bearingDeg(lat1, lon1, lat2, lon2){
+    const toRadLocal = d => d * Math.PI / 180;
+    const toDegLocal = r => r * 180 / Math.PI;
+    const phi1 = toRadLocal(asNumber(lat1));
+    const phi2 = toRadLocal(asNumber(lat2));
+    const dLon = toRadLocal(asNumber(lon2) - asNumber(lon1));
+    if (![phi1, phi2, dLon].every(Number.isFinite)) return NaN;
+    const y = Math.sin(dLon) * Math.cos(phi2);
+    const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLon);
+    return (toDegLocal(Math.atan2(y, x)) + 360) % 360;
+  }
+  function headingFromRunwayEnd(end){
+    const m = String(end || '').match(/^(\d{1,2})/);
+    if (!m) return NaN;
+    const n = Number(m[1]);
+    if (!Number.isFinite(n)) return NaN;
+    return n === 36 ? 360 : n * 10;
+  }
+  function surfaceForCalc(surface){
+    const s = String(surface || '').toUpperCase();
+    if (s.includes('TURF') || s.includes('GRASS') || s.includes('DIRT') || s.includes('GRVL')) return 'grass';
+    return 'paved_dry';
+  }
+  function runwayLabel(rwy){
+    const size = [rwy.length, rwy.width].filter(Boolean).join('x');
+    const surf = rwy.surface ? ` ${rwy.surface}` : '';
+    return `RWY ${rwy.end} - ${size || 'length n/a'}${surf}`;
+  }
+  function buildRunwayEnds(features){
+    const ends = [];
+    features.forEach(feature => {
+      const a = feature.attributes || {};
+      const parts = String(a.RWY_ID || '').split('/').map(s => s.trim()).filter(Boolean);
+      if (!parts.length) return;
+      const h12 = bearingDeg(a.LAT1_DECIMAL, a.LONG1_DECIMAL, a.LAT2_DECIMAL, a.LONG2_DECIMAL);
+      const h21 = bearingDeg(a.LAT2_DECIMAL, a.LONG2_DECIMAL, a.LAT1_DECIMAL, a.LONG1_DECIMAL);
+      const base = {
+        pair:a.RWY_ID || '',
+        airport:a.ARPT_NAME || '',
+        length:a.RWY_LEN || '',
+        width:a.RWY_WIDTH || '',
+        surface:a.SURFACE_TYPE_CODE || '',
+        calcSurface:surfaceForCalc(a.SURFACE_TYPE_CODE)
+      };
+      ends.push({
+        ...base,
+        end:parts[0],
+        value:`${a.RWY_ID || parts[0]}:${parts[0]}`,
+        headingTrue:Number.isFinite(h12) ? h12 : headingFromRunwayEnd(parts[0]),
+        headingMag:headingFromRunwayEnd(parts[0])
+      });
+      if (parts[1]) {
+        ends.push({
+          ...base,
+          end:parts[1],
+          value:`${a.RWY_ID || parts[1]}:${parts[1]}`,
+          headingTrue:Number.isFinite(h21) ? h21 : headingFromRunwayEnd(parts[1]),
+          headingMag:headingFromRunwayEnd(parts[1])
+        });
+      }
+    });
+    return ends.sort((a,b) => String(a.end).localeCompare(String(b.end), undefined, { numeric:true }));
+  }
+  function selectedRunway(){
+    const value = els.runway?.value || state.selectedRunwayValue;
+    return state.runways.find(r => r.value === value) || state.runways[0] || null;
+  }
+  function saveContext(){
+    try {
+      localStorage.setItem(WX_KEY, JSON.stringify({
+        airportInput:state.airportInput,
+        selectedRunwayValue:els.runway?.value || state.selectedRunwayValue || ''
+      }));
+    } catch (_) {}
+  }
+  function loadSavedContext(){
+    try {
+      return JSON.parse(localStorage.getItem(WX_KEY) || '{}');
+    } catch (_) {
+      return {};
+    }
+  }
+  function setField(id, value){
+    const el = document.getElementById(id);
+    if (!el || value === '' || value == null) return;
+    el.value = String(value);
+    el.dispatchEvent(new Event('input', { bubbles:true }));
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+  function setSelect(id, value){
+    const el = document.getElementById(id);
+    if (!el || value == null || value === '') return;
+    el.value = String(value);
+    el.dispatchEvent(new Event('input', { bubbles:true }));
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+  function activateButton(selector){
+    const btn = document.querySelector(selector);
+    if (btn && !btn.classList.contains('active')) btn.click();
+  }
+  function normalizeWeather(obs, station){
+    const p = obs?.properties || {};
+    const sp = station?.properties || {};
+    const coords = obs?.geometry?.coordinates || station?.geometry?.coordinates || [];
+    const timestamp = p.timestamp ? new Date(p.timestamp) : null;
+    const elevM = asNumber(p.elevation?.value);
+    const stationElevM = asNumber(sp.elevation?.value);
+    return {
+      stationId:p.stationId || sp.stationIdentifier || state.icao,
+      name:p.stationName || sp.name || '',
+      timestamp,
+      raw:p.rawMessage || '',
+      text:p.textDescription || '',
+      tempC:asNumber(p.temperature?.value),
+      dewpointC:asNumber(p.dewpoint?.value),
+      windDir:asNumber(p.windDirection?.value),
+      windKt:kmhToKt(p.windSpeed?.value),
+      gustKt:kmhToKt(p.windGust?.value),
+      altInHg:paToInHg(p.barometricPressure?.value),
+      visibilityM:asNumber(p.visibility?.value),
+      elevationFt:metersToFeet(Number.isFinite(elevM) ? elevM : stationElevM),
+      lat:asNumber(coords[1]),
+      lon:asNumber(coords[0]),
+      clouds:Array.isArray(p.cloudLayers) ? p.cloudLayers : []
+    };
+  }
+  function formatClouds(wx){
+    if (!wx?.clouds?.length) return wx?.text || 'No cloud layers';
+    return wx.clouds.map(layer => {
+      const amount = layer.amount || 'Clouds';
+      const ft = metersToFeet(layer.base?.value);
+      return Number.isFinite(ft) ? `${amount} ${Math.round(ft)} ft` : amount;
+    }).join(', ');
+  }
+  function updateRunwaySelect(preferred){
+    if (!els.runway) return;
+    els.runway.innerHTML = '';
+    if (!state.runways.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No FAA runway data';
+      els.runway.appendChild(opt);
+      els.runway.disabled = true;
+      return;
+    }
+    state.runways.forEach(rwy => {
+      const opt = document.createElement('option');
+      opt.value = rwy.value;
+      opt.textContent = runwayLabel(rwy);
+      opt.dataset.headingTrue = String(rwy.headingTrue);
+      opt.dataset.headingMag = String(rwy.headingMag);
+      els.runway.appendChild(opt);
+    });
+    els.runway.disabled = false;
+    const values = state.runways.map(r => r.value);
+    els.runway.value = values.includes(preferred) ? preferred : values[0];
+    state.selectedRunwayValue = els.runway.value;
+  }
+  function updateStatus(){
+    const wx = state.weather;
+    const rwy = selectedRunway();
+    if (!wx) {
+      setStatus(state.icao ? `${state.icao}: no current observation found.` : 'No airport loaded.', 'Report age: -');
+      return;
+    }
+    const temp = Number.isFinite(wx.tempC) ? `${round(wx.tempC,0)} C` : '- C';
+    const dew = Number.isFinite(wx.dewpointC) ? `${round(wx.dewpointC,0)} C` : '- C';
+    const wind = Number.isFinite(wx.windDir) && Number.isFinite(wx.windKt)
+      ? `${pad3(wx.windDir)} at ${round(wx.windKt,0)} kt`
+      : 'wind -';
+    const alt = Number.isFinite(wx.altInHg) ? `alt ${round(wx.altInHg,2)}` : 'alt -';
+    const runway = rwy ? `Runway ${rwy.end} ${pad3(rwy.headingTrue)} true` : 'Runway -';
+    const clouds = formatClouds(wx);
+    const name = wx.name || state.stationName || '';
+    setStatus(
+      `${state.icao} ${name} - ${temp}/${dew}, ${wind}, ${alt}, ${clouds}. ${runway}.`
+    );
+    setReportAge(wx.timestamp);
+  }
+  async function fetchWeather(icao){
+    const stationUrl = `https://api.weather.gov/stations/${encodeURIComponent(icao)}`;
+    const obsUrl = `${stationUrl}/observations/latest`;
+    const [stationRes, obsRes] = await Promise.allSettled([
+      fetchJson(stationUrl),
+      fetchJson(obsUrl)
+    ]);
+    const station = stationRes.status === 'fulfilled' ? stationRes.value : null;
+    const obs = obsRes.status === 'fulfilled' ? obsRes.value : null;
+    if (!station && !obs) throw new Error('No NWS station or observation found.');
+    return normalizeWeather(obs, station);
+  }
+  async function fetchRunways(faa){
+    if (!faa || faa.length > 4) return [];
+    const params = new URLSearchParams({
+      f:'json',
+      where:`ARPT_ID='${faa.replace(/'/g, "''")}'`,
+      outFields:'ARPT_ID,ARPT_NAME,RWY_ID,RWY_LEN,RWY_WIDTH,SURFACE_TYPE_CODE,LAT1_DECIMAL,LONG1_DECIMAL,LAT2_DECIMAL,LONG2_DECIMAL',
+      returnGeometry:'false',
+      orderByFields:'RWY_ID'
+    });
+    const data = await fetchJson(`${RUNWAY_URL}?${params.toString()}`);
+    return buildRunwayEnds(data.features || []);
+  }
+  function applyAutofill(){
+    const wx = state.weather;
+    const rwy = selectedRunway();
+    const elevFt = Number.isFinite(wx?.elevationFt) ? Math.round(wx.elevationFt) : '';
+    const tempC = Number.isFinite(wx?.tempC) ? round(wx.tempC,0) : '';
+    const dewC = Number.isFinite(wx?.dewpointC) ? round(wx.dewpointC,0) : '';
+    const windDir = Number.isFinite(wx?.windDir) ? Math.round(wx.windDir) : '';
+    const windKt = Number.isFinite(wx?.windKt) ? Math.round(wx.windKt) : '';
+    const altInHg = Number.isFinite(wx?.altInHg) ? round(wx.altInHg,2) : '';
+    const rwyTrue = Number.isFinite(rwy?.headingTrue) ? Math.round(rwy.headingTrue) : '';
+
+    setField('F_ELEV', elevFt);
+    setField('F_ALT', altInHg);
+    setField('F_OAT', tempC);
+    if (rwyTrue !== '') setField('RWY_HDG', rwyTrue);
+    if (windDir !== '' && windKt !== '') setField('WIND_AT', `${pad3(windDir)}@${windKt}`);
+    if (rwy?.calcSurface) setSelect('RWY_SURF', rwy.calcSurface);
+
+    setField('A_FLD', elevFt);
+    setField('A_IND', elevFt);
+    activateButton('#A_ALTU_PILLS button[data-altu="inHg"]');
+    activateButton('#A_UNIT_PILLS button[data-tunit="C"]');
+    setField('A_ALTSET', altInHg);
+    setField('A_OAT', tempC);
+    setSelect('A_SRC', 'alt');
+
+    setSelect('CL_UNITS', 'C');
+    setField('CL_FLD_FT', elevFt);
+    setField('CL_T', tempC);
+    setField('CL_TD', dewC);
+
+    setField('oatc', tempC);
+    setField('CNV_OAT', tempC);
+    setField('SSA_oat', tempC);
+
+    if (rwyTrue !== '') {
+      setField('W_RWY', rwyTrue);
+      setSelect('W_RWY_REF', 'true');
+      setField('W_VAR2', '');
+      setField('PA_HDG', rwyTrue);
+    }
+    if (windDir !== '' && windKt !== '') {
+      setField('W_WF2', windDir);
+      setField('W_W2', windKt);
+      setField('W_WINDDIR', windDir);
+      setField('W_WINDSPEED', windKt);
+      setSelect('W_WINDREF', 'true');
+      setField('PA_WIND_FROM', windDir);
+      setField('PA_W', windKt);
+      setField('FPM_H_WDIR', windDir);
+      setField('FPM_H_WSPD', windKt);
+    }
+    setField('PA_GROUND_MSL', elevFt);
+  }
+  async function loadAirport(raw, options = {}){
+    const codes = splitAirportCode(raw || els.airport?.value);
+    if (!codes.icao) {
+      setStatus('Enter an airport code first.', 'Report age: -');
+      return;
+    }
+    setBusy(true);
+    setStatus(`Loading ${codes.icao} weather and runway data...`, 'Report age: loading');
+    state.airportInput = normalizeAirportCode(raw || els.airport?.value);
+    state.icao = codes.icao;
+    state.faa = codes.faa;
+    if (els.airport) els.airport.value = state.airportInput || state.icao;
+
+    const preferredRunway = options.runwayValue || state.selectedRunwayValue;
+    try {
+      const [weatherRes, runwayRes] = await Promise.allSettled([
+        fetchWeather(codes.icao),
+        fetchRunways(codes.faa)
+      ]);
+      if (weatherRes.status === 'fulfilled') {
+        state.weather = weatherRes.value;
+        state.stationName = state.weather.name;
+      } else {
+        state.weather = null;
+      }
+      state.runways = runwayRes.status === 'fulfilled' ? runwayRes.value : [];
+      updateRunwaySelect(preferredRunway);
+      state.fetchedAt = new Date();
+      applyAutofill();
+      updateStatus();
+      saveContext();
+      if (weatherRes.status !== 'fulfilled' && runwayRes.status !== 'fulfilled') {
+        setStatus(`${codes.icao}: weather and runway lookup failed. Check the code or connection.`, 'Report age: -');
+      } else if (weatherRes.status !== 'fulfilled') {
+        setStatus(`${codes.icao}: runway data loaded, but no current NWS observation was found.`, 'Report age: -');
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus(`Could not load ${codes.icao}. Check the airport code or connection.`, 'Report age: -');
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function loadCurrentLocation(){
+    if (!navigator.geolocation) {
+      setStatus('Current location is not available in this browser.', 'Report age: -');
+      return;
+    }
+    setBusy(true);
+    setStatus('Waiting for current location permission...', 'Report age: -');
+    navigator.geolocation.getCurrentPosition(async pos => {
+      try {
+        const lat = pos.coords.latitude.toFixed(4);
+        const lon = pos.coords.longitude.toFixed(4);
+        setStatus('Finding nearest weather station...', 'Report age: -');
+        const point = await fetchJson(`https://api.weather.gov/points/${lat},${lon}`);
+        const stationsUrl = point?.properties?.observationStations;
+        if (!stationsUrl) throw new Error('No station list for current location.');
+        const stations = await fetchJson(stationsUrl);
+        const first = stations?.features?.[0]?.properties?.stationIdentifier;
+        if (!first) throw new Error('No nearby station found.');
+        await loadAirport(first);
+      } catch (err) {
+        console.error(err);
+        setStatus('Could not load weather for current location.', 'Report age: -');
+        setBusy(false);
+      }
+    }, err => {
+      console.error(err);
+      setStatus('Location permission was blocked or unavailable.', 'Report age: -');
+      setBusy(false);
+    }, { enableHighAccuracy:false, timeout:10000, maximumAge:300000 });
+  }
+
+  els.load?.addEventListener('click', () => loadAirport());
+  els.refresh?.addEventListener('click', () => loadAirport(state.airportInput || els.airport?.value, { runwayValue:els.runway?.value }));
+  els.current?.addEventListener('click', loadCurrentLocation);
+  els.airport?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadAirport();
+  });
+  els.airport?.addEventListener('input', () => {
+    els.airport.value = els.airport.value.toUpperCase();
+  });
+  els.runway?.addEventListener('change', () => {
+    state.selectedRunwayValue = els.runway.value;
+    applyAutofill();
+    updateStatus();
+    saveContext();
+  });
+
+  const saved = loadSavedContext();
+  if (saved.airportInput && els.airport) {
+    els.airport.value = saved.airportInput;
+    state.selectedRunwayValue = saved.selectedRunwayValue || '';
+    setTimeout(() => loadAirport(saved.airportInput, { runwayValue:saved.selectedRunwayValue }), 0);
+  }
+})();
+</script>
+
 <script>
 (function(){
   const grid   = document.getElementById('tiles');
@@ -8380,27 +10484,46 @@ document.addEventListener('click', (ev) => {
   function loadOrder(){
     const order = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
     if(!order.length) return;
-    const map = Object.fromEntries([...grid.children].map(t => [t.dataset.panel, t]));
-    order.forEach(p => map[p] && grid.appendChild(map[p]));
+    const allTiles = [...grid.querySelectorAll('.tile')];
+    const map = Object.fromEntries(allTiles.map(t => [t.dataset.panel, t]));
+    const seen = new Set();
+    order.forEach(p => {
+      if(map[p]){
+        grid.appendChild(map[p]);
+        seen.add(p);
+      }
+    });
+    allTiles.forEach(tile => {
+      if(!seen.has(tile.dataset.panel)) grid.appendChild(tile);
+    });
   }
 
   // ---------- Moves ----------
+  function visibleTiles(){
+    return [...grid.querySelectorAll('.tile:not(.mode-hidden)')];
+  }
+
   function moveUp(el){
-    const prev = el.previousElementSibling;
+    const tiles = visibleTiles();
+    const prev = tiles[tiles.indexOf(el) - 1];
     if(prev) grid.insertBefore(el, prev);
     saveOrder();
   }
   function moveDown(el){
-    const next = el.nextElementSibling;
+    const tiles = visibleTiles();
+    const next = tiles[tiles.indexOf(el) + 1];
     if(next) grid.insertBefore(next, el);
     saveOrder();
   }
   function moveTop(el){
-    grid.insertBefore(el, grid.firstElementChild);
+    const first = visibleTiles()[0];
+    if(first && first !== el) grid.insertBefore(el, first);
     saveOrder();
   }
   function moveBottom(el){
-    grid.appendChild(el);
+    const tiles = visibleTiles();
+    const last = tiles[tiles.length - 1];
+    if(last && last !== el) grid.insertBefore(el, last.nextSibling);
     saveOrder();
   }
 
@@ -8423,11 +10546,19 @@ document.addEventListener('click', (ev) => {
     const h3 = tile.querySelector('h3');
     const p  = tile.querySelector('p');
 
-    const head = document.createElement('div');
-    head.className = 'tile-head';
+    let head = [...tile.children].find(el => el.classList?.contains('tile-head'));
+    if(!head){
+      head = document.createElement('div');
+      head.className = 'tile-head';
+      tile.prepend(head);
+    }
 
-    const wrap = document.createElement('div');
-    wrap.className = 'title-wrap';
+    let wrap = head.querySelector('.title-wrap');
+    if(!wrap){
+      wrap = document.createElement('div');
+      wrap.className = 'title-wrap';
+      head.appendChild(wrap);
+    }
     if (h3) wrap.appendChild(h3);
     if (p)  wrap.appendChild(p);
 
@@ -8438,8 +10569,6 @@ document.addEventListener('click', (ev) => {
     btn.setAttribute('aria-expanded','false');
     btn.textContent = '⋮'; // vertical dots
 
-    head.appendChild(wrap);
-    tile.prepend(head);
     tile.appendChild(btn); // position is absolute, so append is fine
 
     // Footer actions (bottom of tile)
